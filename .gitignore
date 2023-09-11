@@ -10,6 +10,7 @@
 .snapshots/
 #Testing Output folder
 .output/
+sql/
 #Extension App-file
 *.app
 #Rapid Application Development File
@@ -20,3 +21,4 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+tomanage.py
