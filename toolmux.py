@@ -121,8 +121,8 @@ def view_tools(category):
     elif tool_selected[7] == "git":
         git_install_tool(tool_selected)
 
-    elif tool_selected[7] == "curl":
-        curl_install_tool(tool_selected)
+    elif tool_selected[7] == "wget":
+        wget_install_tool(tool_selected)
 
         
     
@@ -193,19 +193,22 @@ def git_install_tool(tool_selected):
 
 
     
-### Instalação via CURL
+### Instalação via wget
 
-def curl_install_tool(tool_selected):
+def wget_install_tool(tool_selected):
     if tool_selected[5]:
         print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
         system(f"apt update && apt install {tool_selected[5]} -y")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via CURL...\033[0m")
 
-    installer = split_url(tool_selected[6])
+    installer = split_url(tool_selected[3])
     
-    system(f"curl -LO {tool_selected[3]};bash ./{installer}")
-    remove(f"./{installer}")
+    system(f"wget {tool_selected[3]};bash ./{installer}")
+    
+    if isfile(f"./{installer}") == True:
+        remove(f"./{installer}")
+    
     verify_install_bin(tool_selected[2])
     back()
 
