@@ -17,7 +17,7 @@ python toolmux.py
 ```
 
 ### Obs:
-Novas ferramentas serão adicionadas a todo momento.
+>Novas ferramentas serão adicionadas a todo momento.
 
 ### Nota:
-Caso você tenha lista de ferramentas e tem interesse de adicioná-las na toolmux, mande para [tiooliver](t.me/@tiooliver_sh) no telegram que iremos cadastrá-las na `#f1f1f1 toolmux`.
+Caso você tenha lista de ferramentas e tem interesse de adicioná-las na `toolmux`, mande para [tiooliver](https://t.me/@tiooliver_sh) no telegram que iremos cadastrá-las na `toolmux`.
