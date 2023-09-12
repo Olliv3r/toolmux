@@ -19,6 +19,7 @@ def menu_tools():
     global category
 
     banner()
+    print(f"\tTotal of {tools.view_total_tools()} tools \n\tavailable")
     menu_tools_categories()
 
     category_option = input(cmd)
@@ -53,7 +54,7 @@ def menu_tools():
 
     elif category_option == "8" or \
         category_option == "08":
-        category = "exploration_tools"
+        category = "exploitation_tools"
 
     elif category_option == "9" or \
         category_option == "09":
@@ -92,6 +93,7 @@ def view_tools(category):
     query = f"SELECT * FROM {tools.tb_name} WHERE category = '{category}' ORDER BY name"
     result = tools.custom_selection(query)
 
+    print(f"\t{category.replace('_', ' ').capitalize()}\n")
     count = 1
     for r in result:
         print(f"\t{count}) {r[1]}")

@@ -34,7 +34,7 @@ def menu_tools_categories():
     5) Sniffing and Faking
     6) Maintaining Access
     7) Reporting Tools
-    8) Exploration Tools
+    8) Exploitation Tools
     9) Forensic Tools
     10) Stress Test
     11) Password Attacks
