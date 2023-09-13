@@ -1,12 +1,11 @@
 from os import system
-from random import choice
 
 ### Banner do toolmux
 
 def banner():
     system('clear')
     banner = open('src/banner.txt', 'r')
-    print(banner.read())
+    print(f"\033[34;1m{banner.read()}\033[0m")
 
 
 ### Menu de opçôes do gerenciador
@@ -27,19 +26,19 @@ def menu_manager_options():
 
 def menu_tools_categories():
     print("""
-    1) Information Collection
-    2) Vulnerability Analysis
-    3) Wireless Attacks
-    4) Web Applications
-    5) Sniffing and Faking
-    6) Maintaining Access
-    7) Reporting Tools
-    8) Exploitation Tools
-    9) Forensic Tools
+    01) Information Collection
+    02) Vulnerability Analysis
+    03) Wireless Attacks
+    04) Web Applications
+    05) Sniffing and Faking
+    06) Maintaining Access
+    07) Reporting Tools
+    08) Exploitation Tools
+    09) Forensic Tools
     10) Stress Test
     11) Password Attacks
     12) Reverse Engineering
     13) Hardware Hacking
     14) Extra
-    0) Exit
+    00) Exit
     """)

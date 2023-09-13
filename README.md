@@ -1,6 +1,11 @@
 # toolmux
-Instalador de ferramentas no termux android
-![main](https://github.com/Olliv3r/toolmux/blob/main/media/captura.jpg)
+Instalador de ferramentas no termux android.
+
+#### Categorias:
+![Captura](https://github.com/Olliv3r/toolmux/blob/main/media/captura.jpg)
+
+#### Tools:
+![Captura dois](https://github.com/Olliv3r/toolmux/blob/main/media/captura_dois.jpg)
 
 ### Instalação:
 ```

@@ -9,12 +9,12 @@
 
 from src.menu import *
 from src.banco import *
-from os import (system, get_terminal_size)
+from os import (system, get_terminal_size, getlogin)
 from time import sleep
 
 ### Variáveis padronizadas
 
-cmd = "Tomanage"
+cmd = f"\033[31;1m┌─\033[0m[\033[34;1m{getlogin()}\033[32;1m@\033[34;1mtomanage\033[0m]\033[31;1m─\033[0m[~/\033[33;1mtoolmux\033[0m]\n\033[31;1m└──╼ \033[34;1m$ \033[0m"
 tools = Tools()
 terminal_size = get_terminal_size()[1] - 4
 warnning = None
@@ -25,7 +25,7 @@ def menu_manager():
     banner()
     menu_manager_options() # menu importado
     
-    option = input(f"{cmd}:~> ")
+    option = input(cmd)
 
     if not option:
         menu_manager()

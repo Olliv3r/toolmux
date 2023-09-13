@@ -9,11 +9,12 @@ from src.banco import *
 from src.menu import *
 from time import sleep
 from os.path import (isfile, isdir ,exists)
-from os import (system, mkdir, remove)
+from os import (system, mkdir, remove, getlogin)
 
 
 tools = Tools()
-cmd = "Toolmux:~> "
+
+cmd = f"\033[31;1m┌─\033[0m[\033[34;1m{getlogin()}\033[32;1m@\033[34;1mtoolmux\033[0m]\033[31;1m─\033[0m[~/\033[33;1mtoolmux\033[0m]\n\033[31;1m└──╼ \033[34;1m$ \033[0m"
 dir = "/data/data/com.termux/files"
 
 ### Baixa a db se não existir
@@ -85,7 +86,8 @@ def menu_tools():
     elif category_option == "14":
         category = "extra"
     
-    elif category_option == "0":
+    elif category_option == "0" or \
+        category_option == "00":
         exit("\nPrograma encerrado\n")
 
     else:
@@ -155,8 +157,8 @@ def find_index(data, option):
 def apt_install_tool(tool_selected):
     
     if tool_selected[5]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via {tool_selected[8]}...\033[0m")
-        system(f"apt install {tool_selected[5]} -y")
+        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
+        system(f"apt update && apt install {tool_selected[5]} -y")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
     system(f"apt install {tool_selected[2]} -y")
@@ -270,7 +272,21 @@ def back():
     else:
         view_tools(category)
 
-if not tools.custom_selection():
-    downloading_db()
 
-menu_tools()
+
+def warnning():
+    system("stty -echoctl")
+    print("\n\033[31;1mProgram interrupt\033[0m\n")
+
+
+try:
+
+    if not tools.custom_selection():
+        downloading_db()
+
+    menu_tools()
+
+except KeyboardInterrupt:
+    warnning()
+except EOFError:
+    warnning()
