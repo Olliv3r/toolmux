@@ -22,5 +22,4 @@ data.json
 *.flf
 #Test results file
 TestResults.xml
-tomanage.py
 *.py~

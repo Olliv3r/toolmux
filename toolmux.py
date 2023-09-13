@@ -11,9 +11,19 @@ from time import sleep
 from os.path import (isfile, isdir ,exists)
 from os import (system, mkdir, remove)
 
+
 tools = Tools()
 cmd = "Toolmux:~> "
 dir = "/data/data/com.termux/files"
+
+### Baixa a db se não existir
+def downloading_db():
+    print()
+    print("\033[33;1mDownloading tool database...\033[0m")
+    system("git clone https://github.com/Olliv3r/toolmux/ tmux > /dev/null 2>&1;mv tmux/banco.db .;rm tmux -rf")
+    print("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2mpython toolmux.py\033[0m'")
+    print()
+    exit()
 
 def menu_tools():
     global category
@@ -260,5 +270,7 @@ def back():
     else:
         view_tools(category)
 
+if not tools.custom_selection():
+    downloading_db()
 
 menu_tools()
