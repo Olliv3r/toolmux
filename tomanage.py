@@ -14,7 +14,7 @@ from time import sleep
 
 ### Variáveis padronizadas
 
-cmd = f"\033[31;1m┌─\033[0m[\033[34;1m{getlogin()}\033[32;1m@\033[34;1mtomanage\033[0m]\033[31;1m─\033[0m[~/\033[33;1mtoolmux\033[0m]\n\033[31;1m└──╼ \033[34;1m$ \033[0m"
+cmd = f"\033[34;1mtoolmux\033[0m:\033[31;1m~\033[34;1m> \033[0m"
 tools = Tools()
 terminal_size = get_terminal_size()[1] - 4
 warnning = None
@@ -192,12 +192,11 @@ def menu_register_tool():
 def menu_update_tool():
     global result_category
     global result_type_install
-
-    warnning = "\n: Escolha o id de um registro acima : \n"
     
     while True:
         banner()
-
+        print("\n: Escolha a coluna abaixo para encontrar um registro : \n")
+        
         if (tools.view_total_tools() == 0):
             warnning = "\n: Não há nenhuma ferramenta : \n"
             print(warnning)
@@ -205,81 +204,111 @@ def menu_update_tool():
             menu_manager()
 
         else:
-            show_tools()
+            show_columns()
+            column_option = input("Encontrar ferramenta pelo: ")
 
-            print(warnning)
-            id_option = input("Informe o id da ferramenta: ")
+            if not column_option:
+                print(f"\n: É necessário informar por qual coluna encontrar o registro :\n")
+                input("Pressione ENTER para voltar...")
+                menu_update_tool()
 
-            if not id_option:
-                warnning = "\n: É necessário informar o id do registro :\n"
+            elif column_option == "back":
+                menu_manager()
 
-            elif id_option == "back":
+            elif not column_option.isnumeric():
+                print("\n: Informe apenas o índice da coluna :\n")
+                input("Pressione ENTER para voltar...")
+                menu_update_tool()
 
-                option  = input("Pressione ENTER para voltar ou n para continuar nesta tela...")
+            elif column_option.isnumeric():
+        
+                result_column = find_item_index(column_option, tools.table_info())
 
-                if not option:
-                
-                    menu_manager()
+                if not result_column:
+                    print(f"\n: Não existe coluna com o índice {column_option} :\n")
+                    input("Pressione ENTER para voltar...")
+                    menu_update_tool()
 
-                elif option == "n":
-                    warnning = "\n: Retorno cancelado :\n"
-
-            elif not id_option.isnumeric():
-                warnning = "\n: Informe apenas números :\n"
-                
-            elif id_option.isnumeric() and\
-                 not tools.view_tool(id_option):
-                warnning = f"\n: Não existe ferramenta com o id {id_option} :\n"
-
-            elif id_option.isnumeric() and\
-                 tools.view_tool(id_option):
-                banner()
-
-                result_category = input_categories()
-                result_type_install = input_type_install()
-
-                warnning = f"\n: Selecionou a ferramenta com id {id_option} :\n"
-                print(warnning)
-                show_tool(id_option)
-
-                option = input("Pressione ENTER para confirmar ou n para cancelar...")
-                print()
-            
-                if not option:
-                    data = input_data_update(id_option)
+                    
+                while True:
                     banner()
-                    previous_data_require(data)
-                    warnning = f"\n: Confirme a alteração dos dados :\n"
-                    print(warnning)
-                    option  = input("Pressione ENTER para continuar ou n para para cancelar...")
+                    show_tools()
 
-                    if not option:
+                    print(f"\n: Informe o {result_column} da ferramenta : \n")
+                    column_value_option = input(f"Informe o {result_column} da ferramenta: ")
 
-                        result = tools.update_tool(data, id_option)
-                        if result == True:
-                            banner()
-                            warnning = f"\n: Ferramenta atualizada com sucesso {result} :\n"
-                            print(warnning)
-                            show_tool(id_option)
-                            input("Pressione ENTER para voltar...")
-                            warnning = f"\n: De volta para esta tela! :\n"
+                    if not column_value_option:
+                        result_column = find_item_index(column_option, tools.table_info())
+                        print(f"\n: É necessário informar o {result_column} do registro :\n")
+                        input("Pressione ENTER para voltar...")
                     
-                        else:
-                            warnning = f"\n: Erro ao atualizar a ferramenta {result} :\n"
 
-                    elif option == "n":
-                        warnning = "\n: Ação cancelada :\n"
+                    elif column_value_option == "back":
+                        option  = input("Pressione ENTER para voltar ou n para continuar nesta tela...")
+                    
+                        if not option:
+                            break
+
+                        elif option == "n":
+                            print("\n: Retorno cancelado :\n")
+                            input("Pressione ENTER para voltar...")
+
+                    elif column_value_option:
+                        result_column = find_item_index(column_option, tools.table_info())
+
+                        result_column_value = tools.find_tool_column(result_column, column_value_option)
+                    
+                        if not result_column_value:
+                            print(f"\n: Não existe registro com o {column_value_option} :\n")
+                            input("Pressione ENTER para voltar...")
                         
-                elif  option == "n":
-                    warnning = "\n: Retorno cancelado :\n"
-                
+                        elif result_column_value:
+                            banner()
+                            #input(result_column_value)
 
+                            result_category = input_categories()
+                            result_type_install = input_type_install()
+
+                            show_tool(result_column_value[0][0])
+
+                            print(f"\n: Selecionou a ferramenta com id {result_column_value[0][0]} :\n")
+                            option = input("Pressione ENTER para confirmar ou n para cancelar...")
+                            print()
+                            
+                            if not option:
+                                data = input_data_update(result_column_value[0][0])
+                                banner()
+                                previous_data_require(data)
+                                warnning = f"\n: Confirme a alteração dos dados :\n"
+                                print(warnning)
+                                option  = input("Pressione ENTER para continuar ou n para para cancelar...")
+                                
+                                if not option:
+                                    result = tools.update_tool(data, result_column_value[0][0])
+                                if result == True:
+                                    banner()
+                                    warnning = f"\n: Ferramenta atualizada com sucesso {result} :\n"
+                                    print(warnning)
+                                    show_tool(result_column_value[0][0])
+                                    input("Pressione ENTER para voltar...")
+                                    warnning = f"\n: De volta para esta tela! :\n"
+                                
+                                else:
+                                    warnning = f"\n: Erro ao atualizar a ferramenta {result} :\n"
+
+                            elif option == "n":
+                                warnning = "\n: Ação cancelada :\n"
+                    
+                    
+                    
 def menu_delete_tool():
-    warnning = "\n: Escolha o id de um registro acima : \n"
+    global result_category
+    global result_type_install
     
     while True:
         banner()
-
+        print("\n: Escolha a coluna abaixo para encontrar um registro : \n")
+        
         if (tools.view_total_tools() == 0):
             warnning = "\n: Não há nenhuma ferramenta : \n"
             print(warnning)
@@ -287,61 +316,95 @@ def menu_delete_tool():
             menu_manager()
 
         else:
-            show_tools()
+            show_columns()
+            column_option = input("Encontrar ferramenta pelo: ")
 
-            print(warnning)
-            id_option = input("Informe o id da ferramenta: ")
+            if not column_option:
+                print(f"\n: É necessário informar por qual coluna encontrar o registro :\n")
+                input("Pressione ENTER para voltar...")
+                menu_update_tool()
 
-            if not id_option:
-                warnning = "\n: É necessário informar o id do registro :\n"
-                
-            elif id_option == "back":
+            elif column_option == "back":
+                menu_manager()
 
-                option  = input("Pressione ENTER para voltar ou n para continuar nesta tela...")
+            elif not column_option.isnumeric():
+                print("\n: Informe apenas o índice da coluna :\n")
+                input("Pressione ENTER para voltar...")
+                menu_update_tool()
 
-                if not option:
-                
-                    menu_manager()
+            elif column_option.isnumeric():
+        
+                result_column = find_item_index(column_option, tools.table_info())
 
-                elif option == "n":
-                    warnning = "\n: Retorno cancelado :\n"
+                if not result_column:
+                    print(f"\n: Não existe coluna com o índice {column_option} :\n")
+                    input("Pressione ENTER para voltar...")
+                    menu_update_tool()
 
-            elif not id_option.isnumeric():
-                warnning = "\n: Informe apenas números :\n"
-
-            elif id_option.isnumeric() and\
-                 not tools.view_tool(id_option):
-                warnning = f"\n: Não existe ferramenta com o id {id_option} :\n"
-
-            elif id_option.isnumeric() and\
-                 tools.view_tool(id_option):
-                banner()
-                warnning = f"\n: Selecionou a ferramenta com id {id_option} :\n"
-                print(warnning)
-                show_tool(id_option)
-
-                warnning = f"\n: Confirme a exclusão da ferramenta :\n"
-                print(warnning)
-                option = input("Pressione ENTER para confirmar ou n para cancelar...")
-                print()
-            
-                if not option:
                     
-                    result = tools.delete_tool(id_option)
-                    
-                    if(result):
-                        banner()
-                        warnning = f"\n: Ferramenta excluída com sucesso :\n"
-                        print(warnning)
-                    
+                while True:
+                    banner()
+                    show_tools()
+
+                    print(f"\n: Informe o {result_column} da ferramenta : \n")
+                    column_value_option = input(f"Informe o {result_column} da ferramenta: ")
+
+                    if not column_value_option:
+                        result_column = find_item_index(column_option, tools.table_info())
+                        print(f"\n: É necessário informar o {result_column} do registro :\n")
                         input("Pressione ENTER para voltar...")
-                        warnning = f"\n: De volta para esta tela! :\n"
                     
-                    else:
-                        warnning = f"\n: Erro ao excluir a ferramenta :\n"
 
-                elif option == "n":
-                    warnning = "\n: Ação cancelada :\n"
+                    elif column_value_option == "back":
+                        option  = input("Pressione ENTER para voltar ou n para continuar nesta tela...")
+                    
+                        if not option:
+                            break
+
+                        elif option == "n":
+                            print("\n: Retorno cancelado :\n")
+                            input("Pressione ENTER para voltar...")
+
+                    elif column_value_option:
+                        result_column = find_item_index(column_option, tools.table_info())
+
+                        result_column_value = tools.find_tool_column(result_column, column_value_option)
+                    
+                        if not result_column_value:
+                            print(f"\n: Não existe registro com o {column_value_option} :\n")
+                            input("Pressione ENTER para voltar...")
+                        
+                        elif result_column_value:
+                            banner()
+                            
+                            show_tool(result_column_value[0][0])
+
+                            print(f"\n: Selecionou a ferramenta com id {result_column_value[0][0]} :\n")
+                            option = input("Pressione ENTER para confirmar ou n para cancelar...")
+                            print()
+                            
+                            if not option:
+                                banner()
+                                
+                                print(f"\n: Confirme a exclusão do registro :\n")
+                                option  = input("Pressione ENTER para confirmar ou n para para cancelar...")
+                                
+                                if not option:
+                                    result = tools.delete_tool(result_column_value[0][0])
+                                    if result == True:
+                                        banner()
+                                        print(f"\n: Ferramenta apagada com sucesso {result} :\n")
+                                        show_tool(result_column_value[0][0])
+                                        input("Pressione ENTER para voltar...")
+                                
+                                    else:
+                                        print(f"\n: Erro ao atualizar a ferramenta {result} :\n")
+                                        input("Pressione ENTER para voltar...")
+
+                            elif option == "n":
+                                print("\n: Ação cancelada :\n")
+                                input("Pressione ENTER para voltar...")
+
 
 
 def menu_do_backup():
@@ -645,10 +708,26 @@ def find_item_index(item_arg, list_arg):
     for item in list_items:
         list_items_index.append(list_items.index(item))
 
-    if len(item_arg) in list_items_index:
+    if (int(item_arg) -1) in list_items_index:
         return list_items[int(item_arg) -1]
     else:
         return False
+
+
+
+def show_columns():
+    result = tools.table_info()
+    count = 1
+
+    print("-"*terminal_size*2)
+    print(": Colunas :")
+    print(":")
+    
+    for column in result:
+        print(f": {count} {column.replace('_',' ').capitalize()}")
+        count = count + 1
+        
+    print("-"*terminal_size*2)
 
     
 menu_manager()

@@ -147,16 +147,21 @@ class Tools:
     
     ### Select personalizado
 
-    def custom_selection(self, sql=f"SELECT * FROM {tb_name} ORDER BY name"):
+    def custom_selection(self, sql=f"SELECT * FROM {tb_name} ORDER BY name", args=()):
         try:
-            result = self.db.cursor.execute(sql)
+            result = self.db.cursor.execute(sql, (args,))
             self.db.conn.commit()
             return result.fetchall()
 
         except sqlite3.OperationalError as err:
-            return err
+            return False
 
-    
+
+    def find_tool_column(self, column, column_value):
+        result = self.custom_selection(f"SELECT * FROM {self.tb_name} WHERE {column} = ?", column_value)
+        return result
+   
+
     #### Atualiza dados de uma ferramenta
     
     def update_tool(self, data, ID):
