@@ -280,8 +280,8 @@ def warnning():
 
 
 try:
-
     if not tools.custom_selection():
+
         downloading_db()
 
     menu_tools()

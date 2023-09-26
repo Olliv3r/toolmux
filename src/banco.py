@@ -147,9 +147,9 @@ class Tools:
     
     ### Select personalizado
 
-    def custom_selection(self, sql=f"SELECT * FROM {tb_name} ORDER BY name", args=()):
+    def custom_selection(self, sql=f"SELECT * FROM {tb_name} ORDER BY name"):
         try:
-            result = self.db.cursor.execute(sql, (args,))
+            result = self.db.cursor.execute(sql)
             self.db.conn.commit()
             return result.fetchall()
 
