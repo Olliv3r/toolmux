@@ -4,7 +4,7 @@ from os import system
 
 def banner():
     system('clear')
-    banner = open('src/banner.txt', 'r')
+    banner = open('src/banner', 'r')
     print(f"\033[34;1m{banner.read()}\033[0m")
 
 
