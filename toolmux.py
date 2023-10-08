@@ -22,16 +22,14 @@ dir = "/data/data/com.termux/files"
 def downloading_db():
     print()
     print("\033[33;1mDownloading tool database...\033[0m")
-    system("git clone https://github.com/Olliv3r/toolmux/ tmux > /dev/null 2>&1;mv tmux/banco.db .;rm tmux -rf")
-    print("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2mpython toolmux.py\033[0m'")
-    print()
-    exit()
+    system("curl -LO -s https://github.com/Olliv3r/Apps/raw/main/banco.db;sleep 1")
+    exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
 
 def menu_tools():
     global category
 
     banner()
-    print(f"\tTotal of {tools.view_total_tools()} tools \n\tavailable\n")
+    print(f"\tVersion: {__version__}\n\n\tTotal of {tools.view_total_tools()} tools \n\tavailable\n")
     menu_tools_categories()
 
     category_option = input(f"{cmd}-> ")
