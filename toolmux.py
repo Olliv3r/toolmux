@@ -13,6 +13,7 @@ from os import (system, mkdir, remove, getlogin)
 
 
 tools = Tools()
+__version__ = "0.0.2"
 
 cmd = "toolmux"
 dir = "/data/data/com.termux/files"
@@ -142,23 +143,6 @@ def view_tools(category):
             print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
 
     back()
-   
-    #tool_selected = find_index(result, int(tool_option) -1)
-
-    """
-    if tool_selected[7] == "apt":
-        apt_install_tool(tool_selected)
-
-    elif tool_selected[7] == "apt not official":
-        apt_not_official_install_tool(tool_selected)
-
-    elif tool_selected[7] == "git":
-        git_install_tool(tool_selected)
-
-    elif tool_selected[7] == "wget":
-        wget_install_tool(tool_selected)
-
-    """
          
 ### Descobre o índice da ferramenta
 
@@ -185,7 +169,6 @@ def apt_install_tool(tool_selected):
     system(f"apt install {tool_selected[2]} -y")
         
     verify_install_bin(tool_selected[2])
-    #back()
 
 ### Instalação via APT not official
 
@@ -206,7 +189,6 @@ def apt_not_official_install_tool(tool_selected):
     system(f"apt update && apt install {tool_selected[2]} -y")
     remove(f"{dir}/usr/etc/apt/sources.list.d/{installer}")
     verify_install_bin(tool_selected[2])
-    #back()
 
 ### Instalação via GIT
 
@@ -220,7 +202,6 @@ def git_install_tool(tool_selected):
     print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
     system(f"git clone {tool_selected[3]} {dir}/home/{tool_selected[2]}")
     verify_install_home(tool_selected[2])
-    #back()
  
 ### Instalação via wget
 
@@ -239,8 +220,6 @@ def wget_install_tool(tool_selected):
         remove(f"./{installer}")
     
     verify_install_bin(tool_selected[2])
-    #back()
-
     
 ### Retorna o nome do instalador da url
     
