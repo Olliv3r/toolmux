@@ -31,7 +31,7 @@ def menu_tools():
     global category
 
     banner()
-    print(f"\tTotal of {tools.view_total_tools()} tools \n\tavailable")
+    print(f"\tTotal of {tools.view_total_tools()} tools \n\tavailable\n")
     menu_tools_categories()
 
     category_option = input(f"{cmd}-> ")
