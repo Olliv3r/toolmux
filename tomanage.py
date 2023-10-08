@@ -195,7 +195,7 @@ def menu_update_tool():
     
     while True:
         banner()
-        print("\n: Escolha a coluna abaixo para encontrar um registro : \n")
+        print("\n: Escolha a coluna do registro para atualizar : \n")
         
         if (tools.view_total_tools() == 0):
             warnning = "\n: Não há nenhuma ferramenta : \n"

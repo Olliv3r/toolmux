@@ -14,7 +14,7 @@ from os import (system, mkdir, remove, getlogin)
 
 tools = Tools()
 
-cmd = f"\033[31;1m┌─\033[0m[\033[34;1m{getlogin()}\033[32;1m@\033[34;1mtoolmux\033[0m]\033[31;1m─\033[0m[~/\033[33;1mtoolmux\033[0m]\n\033[31;1m└──╼ \033[34;1m$ \033[0m"
+cmd = "toolmux"
 dir = "/data/data/com.termux/files"
 
 ### Baixa a db se não existir
@@ -33,7 +33,7 @@ def menu_tools():
     print(f"\tTotal of {tools.view_total_tools()} tools \n\tavailable")
     menu_tools_categories()
 
-    category_option = input(cmd)
+    category_option = input(f"{cmd}-> ")
 
     if category_option == "1" or \
         category_option == "01":
@@ -114,7 +114,7 @@ def view_tools(category):
     print("\n\t0) Exit\n\tENTER) To go back\n")
     
     print()
-    tool_option = input(cmd)
+    tool_option = input(f"{cmd}-> ")
 
     if tool_option == "0":
         exit("\nProgram closed\n")
@@ -122,8 +122,30 @@ def view_tools(category):
     if tool_option == "":
         menu_tools()
 
-    tool_selected = find_index(result, int(tool_option) -1)
+    options = tool_option.split(",")
 
+    for option in options:
+        try:
+            tool_selected = find_index(result, int(option) -1)
+
+            if tool_selected[7] == "apt":
+                apt_install_tool(tool_selected)
+
+            elif tool_selected[7] == "apt not official":
+                apt_not_official_install_tool(tool_selected)
+            elif tool_selected[7] == "git":
+                git_install_tool(tool_selected)
+
+            elif tool_selected[7] == "wget":
+                wget_install_tool(tool_selected)
+        except TypeError as err:
+            print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
+
+    back()
+   
+    #tool_selected = find_index(result, int(tool_option) -1)
+
+    """
     if tool_selected[7] == "apt":
         apt_install_tool(tool_selected)
 
@@ -136,8 +158,8 @@ def view_tools(category):
     elif tool_selected[7] == "wget":
         wget_install_tool(tool_selected)
 
-        
-    
+    """
+         
 ### Descobre o índice da ferramenta
 
 def find_index(data, option):
@@ -151,7 +173,6 @@ def find_index(data, option):
     else:
         return False
 
-
 ### Instalação via APT official
 
 def apt_install_tool(tool_selected):
@@ -164,8 +185,7 @@ def apt_install_tool(tool_selected):
     system(f"apt install {tool_selected[2]} -y")
         
     verify_install_bin(tool_selected[2])
-    back()
-
+    #back()
 
 ### Instalação via APT not official
 
@@ -186,9 +206,8 @@ def apt_not_official_install_tool(tool_selected):
     system(f"apt update && apt install {tool_selected[2]} -y")
     remove(f"{dir}/usr/etc/apt/sources.list.d/{installer}")
     verify_install_bin(tool_selected[2])
-    back()
+    #back()
 
- 
 ### Instalação via GIT
 
 def git_install_tool(tool_selected):
@@ -201,10 +220,8 @@ def git_install_tool(tool_selected):
     print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
     system(f"git clone {tool_selected[3]} {dir}/home/{tool_selected[2]}")
     verify_install_home(tool_selected[2])
-    back()
-
-
-    
+    #back()
+ 
 ### Instalação via wget
 
 def wget_install_tool(tool_selected):
@@ -222,7 +239,7 @@ def wget_install_tool(tool_selected):
         remove(f"./{installer}")
     
     verify_install_bin(tool_selected[2])
-    back()
+    #back()
 
     
 ### Retorna o nome do instalador da url
@@ -230,7 +247,6 @@ def wget_install_tool(tool_selected):
 def split_url(url):
     r_url = url.split("/")
     return r_url[-1]
-
 
 ### Verifica instalação via APT ou APT not offical:
 
@@ -240,7 +256,6 @@ def verify_install_bin(file):
         print(f"\033[32;1m{file} installed\033[0m")
     else:
         print(f"\033[31;1m{file} not installed\033[0m")
-
 
 ### Verifica instalação via GIT
 
@@ -265,14 +280,12 @@ def verify_and_remove(directory):
 def back():
     print("\n 0) Exit \n ENTER) To go back\n")
     
-    option = input(cmd)
+    option = input(f"{cmd}-> ")
 
     if option == "0":
         exit("\nProgram closed\n")
     else:
         view_tools(category)
-
-
 
 def warnning():
     system("stty -echoctl")

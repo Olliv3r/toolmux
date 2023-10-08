@@ -158,7 +158,7 @@ class Tools:
 
 
     def find_tool_column(self, column, column_value):
-        result = self.custom_selection(f"SELECT * FROM {self.tb_name} WHERE {column} = ?", column_value)
+        result = self.custom_selection(f"SELECT * FROM {self.tb_name} WHERE {column} = {column_value}")
         return result
    
 
