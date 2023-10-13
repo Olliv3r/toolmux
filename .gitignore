@@ -11,6 +11,8 @@
 #Testing Output folder
 .output/
 sql/
+src/__pycache__/
+__pycache__/
 #Extension App-file
 *.app
 #Rapid Application Development File

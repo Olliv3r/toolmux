@@ -10,80 +10,94 @@ from src.menu import *
 from time import sleep
 from os.path import (isfile, isdir ,exists)
 from os import (system, mkdir, remove, getlogin)
+import requests
 
-
-tools = Tools()
-__version__ = "0.0.2"
+tool = Tool()
+__version__ = "0.0.3"
 
 cmd = "toolmux"
 dir = "/data/data/com.termux/files"
 
+
+### Checa internet
+def check_internet():
+    print("Checking internet...")
+    try:
+        requests.request('get', 'https://www.google.com', timeout=5)
+        return True
+    except request.exceptions.ConnectionError:
+        return False
+
 ### Baixa a db se não existir
 def downloading_db():
+    if check_internet() == False:
+        exit("Internet is not connected")
+    print("Internet is connected")
+
     print()
     print("\033[33;1mDownloading tool database...\033[0m")
-    system("curl -LO -s https://github.com/Olliv3r/Apps/raw/main/banco.db;sleep 1")
+    system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/App/main/app.db;sleep 1")
     exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
 
 def menu_tools():
     global category
 
     banner()
-    print(f"\tVersion: {__version__}\n\n\tTotal of {tools.view_total_tools()} tools \n\tavailable\n")
+    print(f"\tVersion: {__version__}\n\n\tTotal of {total} tools \n\tavailable\n")
     menu_tools_categories()
 
     category_option = input(f"{cmd}-> ")
 
     if category_option == "1" or \
         category_option == "01":
-        category = "information_collection"
+        category = "Information Collection"
 
     elif category_option == "2" or \
         category_option == "02":
-        category = "vulnerability_analysis"
+        category = "Vulnerability Analysis"
 
     elif category_option == "3" or \
         category_option == "03":
-        category = "wireless_attacks"
+        category = "Wireless Attacks"
 
     elif category_option == "4" or \
         category_option == "04":
-        category = "web_applications"
+        category = "Web Applications"
 
     elif category_option == "5" or \
         category_option == "05":
-        category = "sniffing_and_faking"
+        category = "Sniffing and Faking"
 
     elif category_option == "6" or \
         category_option == "06":
-        category = "maintaining_access"
+        category = "Maintaining Access"
 
     elif category_option == "7" or \
         category_option == "07":
-        category = "reporting_tools"
+        category = "Reporting Tools"
 
     elif category_option == "8" or \
         category_option == "08":
-        category = "exploitation_tools"
+        category = "Exploitation Tools"
 
     elif category_option == "9" or \
         category_option == "09":
-        category = "forensic_tools"
+        category = "Forensic Tools"
 
     elif category_option == "10":
-        category = "stress_test"
+        category = "Stress Test"
 
     elif category_option == "11":
-        category = "password_attacks"
+        category = "Password Attacks"
 
     elif category_option == "12":
-        category = "reverse_engineering"
+        category = "Reverse Engineering"
 
     elif category_option == "13":
-        category = "hardware_hacking"
+        category = "Hardware Hacking"
         
     elif category_option == "14":
-        category = "extra"
+        category = "Extra"
     
     elif category_option == "0" or \
         category_option == "00":
@@ -101,14 +115,13 @@ def view_tools(category):
     banner()
     print()
     
-    query = f"SELECT * FROM {tools.tb_name} WHERE category = '{category}' ORDER BY name"
-    result = tools.custom_selection(query)
+    query = f"SELECT * FROM {tool.tb_name} WHERE category = '{category}' ORDER BY name"
+    result = tool.instrunction(query).fetchall()
 
-    print(f"\t{category.replace('_', ' ').capitalize()}\n")
-    count = 1
-    for r in result:
-        print(f"\t{count}) {r[1]}")
-        count += 1
+    print(f"\t{category}\n")
+
+    for index, r in enumerate(result):
+        print(f"\t{index +1}) {r[1]}")
     
     print("\n\t0) Exit\n\tENTER) To go back\n")
     
@@ -125,7 +138,7 @@ def view_tools(category):
 
     for option in options:
         try:
-            tool_selected = find_index(result, int(option) -1)
+            tool_selected = find_index(option, result)
 
             if tool_selected[7] == "apt":
                 apt_install_tool(tool_selected)
@@ -144,14 +157,14 @@ def view_tools(category):
          
 ### Descobre o índice da ferramenta
 
-def find_index(data, option):
-    tools_index = []
+def find_index(option, result):
+    indexes = []
 
-    for result in data:
-        tools_index.append(data.index(result))
+    for r in result:
+        indexes.append(result.index(r))
 
-    if int(option) in tools_index:
-        return data[int(option)]
+    if (int(option) -1) in indexes:
+        return result[int(option) -1]
     else:
         return False
 
@@ -159,65 +172,65 @@ def find_index(data, option):
 
 def apt_install_tool(tool_selected):
     
-    if tool_selected[5]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[5]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt update && apt install {tool_selected[9]} -y")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
-    system(f"apt install {tool_selected[2]} -y")
+    system(f"apt install {tool_selected[3]} -y")
         
-    verify_install_bin(tool_selected[2])
+    verify_install_bin(tool_selected[3])
 
 ### Instalação via APT not official
 
 def apt_not_official_install_tool(tool_selected):
     
-    if tool_selected[5]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-        system(f"apt install {tool_selected[5]} -y")
+    if tool_selected[7]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[7]} via APT...\033[0m")
+        system(f"apt install {tool_selected[7]} -y")
 
     if exists(f"{dir}/usr/etc/apt/sources.list.d") == False:
         mkdir(f"{dir}/usr/etc/apt/sources.list.d")
 
-    print(f"\033[33;1mAdding unofficial source {tool_selected[6]}...\033[0m")
+    print(f"\033[33;1mAdding unofficial source {tool_selected[2]}...\033[0m")
     installer = split_url(tool_selected[6])
-    system(f"wget {tool_selected[3]} -O {dir}/usr/etc/apt/sources.list.d/{installer}")
+    system(f"curl -L -s {tool_selected[6]} -o {dir}/usr/etc/apt/sources.list.d/{installer}")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT not official...\033[0m")
-    system(f"apt update && apt install {tool_selected[2]} -y")
+    system(f"apt update && apt install {tool_selected[3]} -y")
     remove(f"{dir}/usr/etc/apt/sources.list.d/{installer}")
-    verify_install_bin(tool_selected[2])
+    verify_install_bin(tool_selected[4])
 
 ### Instalação via GIT
 
 def git_install_tool(tool_selected):
-    verify_and_remove(tool_selected[2])
+    verify_and_remove(tool_selected[5])
 
-    if tool_selected[5]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-        system(f"apt install {tool_selected[5]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt install {tool_selected[9]} -y")
     
     print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
-    system(f"git clone {tool_selected[3]} {dir}/home/{tool_selected[2]}")
-    verify_install_home(tool_selected[2])
+    system(f"git clone {tool_selected[6]} {dir}/home/{tool_selected[5]}")
+    verify_install_home(tool_selected[3])
  
-### Instalação via wget
+### Instalação via curl
 
-def wget_install_tool(tool_selected):
-    if tool_selected[5]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[5]} -y")
+def curl_install_tool(tool_selected):
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt update && apt install {tool_selected[9]} -y")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via CURL...\033[0m")
 
-    installer = split_url(tool_selected[3])
+    installer = split_url(tool_selected[6])
     
-    system(f"wget {tool_selected[3]};bash ./{installer}")
+    system(f"curl -LO {tool_selected[6]};bash {installer}")
     
-    if isfile(f"./{installer}") == True:
-        remove(f"./{installer}")
+    if isfile(f"{installer}") == True:
+        remove(f"{installer}")
     
-    verify_install_bin(tool_selected[2])
+    verify_install_bin(tool_selected[3])
     
 ### Retorna o nome do instalador da url
     
@@ -269,14 +282,21 @@ def warnning():
     print("\n\033[31;1mProgram interrupt\033[0m\n")
 
 
-try:
-    if not tools.custom_selection():
+def main():
+    global total
 
+    if isfile('app.db'):
+
+        result = tool.get_total_tool()
+
+        if result == False:
+            downloading_db()
+        
+        total = result.fetchall()[0][0]
+        menu_tools()
+
+    else:
         downloading_db()
 
-    menu_tools()
-
-except KeyboardInterrupt:
-    warnning()
-except EOFError:
-    warnning()
+if __name__ == "__main__":
+    main()
