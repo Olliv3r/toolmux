@@ -10,16 +10,18 @@ from src.menu import *
 from time import sleep
 from os.path import (isfile, isdir ,exists)
 from os import (system, mkdir, remove, getlogin)
-import requests
+try:
+    import requests
+except ModuleNotFoundError as err:
+    exit(err)
 
 tool = Tool()
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 cmd = "toolmux"
 dir = "/data/data/com.termux/files"
 
-
-### Checa internet
+### Checa acesso a internet:
 def check_internet():
     print("Checking internet...")
     try:
@@ -28,7 +30,7 @@ def check_internet():
     except request.exceptions.ConnectionError:
         return False
 
-### Baixa a db se não existir
+### Baixa a base de ferramentas se não existir:
 def downloading_db():
     if check_internet() == False:
         exit("Internet is not connected")
@@ -39,6 +41,7 @@ def downloading_db():
     system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/App/main/app.db;sleep 1")
     exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
 
+### Menu se categorias:
 def menu_tools():
     global category
 
@@ -109,8 +112,7 @@ def menu_tools():
     view_tools(category)
 
 
-### Mostra todas as ferramentas de acordo com a categoria
-
+### Mostra todas as ferramentas de acordo com a categoria:
 def view_tools(category):
     banner()
     print()
@@ -148,15 +150,14 @@ def view_tools(category):
             elif tool_selected[7] == "git":
                 git_install_tool(tool_selected)
 
-            elif tool_selected[7] == "wget":
-                wget_install_tool(tool_selected)
+            elif tool_selected[7] == "curl":
+                curl_install_tool(tool_selected)
         except TypeError as err:
             print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
 
     back()
          
-### Descobre o índice da ferramenta
-
+### Retorna o item do indice escolhido:
 def find_index(option, result):
     indexes = []
 
@@ -168,26 +169,24 @@ def find_index(option, result):
     else:
         return False
 
-### Instalação via APT official
-
+### Instalação via APT official:
 def apt_install_tool(tool_selected):
     
     if tool_selected[9]:
         print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
         system(f"apt update && apt install {tool_selected[9]} -y")
-        
+
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
     system(f"apt install {tool_selected[3]} -y")
         
-    verify_install_bin(tool_selected[3])
+    verify_install_bin(tool_selected[4], tool_selected[1])
 
-### Instalação via APT not official
-
+### Instalação via APT not official:
 def apt_not_official_install_tool(tool_selected):
     
-    if tool_selected[7]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[7]} via APT...\033[0m")
-        system(f"apt install {tool_selected[7]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt install {tool_selected[9]} -y")
 
     if exists(f"{dir}/usr/etc/apt/sources.list.d") == False:
         mkdir(f"{dir}/usr/etc/apt/sources.list.d")
@@ -199,10 +198,9 @@ def apt_not_official_install_tool(tool_selected):
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT not official...\033[0m")
     system(f"apt update && apt install {tool_selected[3]} -y")
     remove(f"{dir}/usr/etc/apt/sources.list.d/{installer}")
-    verify_install_bin(tool_selected[4])
+    verify_install_bin(tool_selected[4], tool_selected[1])
 
-### Instalação via GIT
-
+### Instalação via GIT:
 def git_install_tool(tool_selected):
     verify_and_remove(tool_selected[5])
 
@@ -212,10 +210,9 @@ def git_install_tool(tool_selected):
     
     print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
     system(f"git clone {tool_selected[6]} {dir}/home/{tool_selected[5]}")
-    verify_install_home(tool_selected[3])
+    verify_install_home(tool_selected[5], tool_selected[1])
  
-### Instalação via curl
-
+### Instalação via curl:
 def curl_install_tool(tool_selected):
     if tool_selected[9]:
         print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
@@ -230,43 +227,38 @@ def curl_install_tool(tool_selected):
     if isfile(f"{installer}") == True:
         remove(f"{installer}")
     
-    verify_install_bin(tool_selected[3])
+    verify_install_bin(tool_selected[4], tool_selected[1])
     
-### Retorna o nome do instalador da url
-    
+### Retorna o nome do instalador da url:
 def split_url(url):
     r_url = url.split("/")
     return r_url[-1]
 
-### Verifica instalação via APT ou APT not offical:
-
-def verify_install_bin(file):
+### Verifica instalação via APT, APT not offical e CURL:
+def verify_install_bin(custom_alias, name):
     print()
-    if isfile(f"{dir}/usr/bin/{file}") == True:
-        print(f"\033[32;1m{file} installed\033[0m")
+    if isfile(f"{dir}/usr/bin/{custom_alias}") == True:
+        print(f"\033[32;1m{name} installed\033[0m")
     else:
-        print(f"\033[31;1m{file} not installed\033[0m")
+        print(f"\033[31;1m{name} not installed\033[0m")
 
-### Verifica instalação via GIT
-
-def verify_install_home(directory):
+### Verifica instalação via GIT:
+def verify_install_home(directory, name):
     print()
     if isdir(f"{dir}/home/{directory}") == True:
-        print(f"\033[32;1m{directory} installed\033[0m")
+        print(f"\033[32;1m{name} installed\033[0m")
     else:
-        print(f"\033[31;1m{directory} not installed\033[0m")
+        print(f"\033[31;1m{name} not installed\033[0m")
 
 
-### Verifica se existe o projeto antigo e o remove
-
+### Verifica a existência do projeto antigo e o remove:
 def verify_and_remove(directory):
     if isdir(f"{dir}/home/{directory}") == True:
         print(f"\033[34;1m{directory} found. downloading new {directory}...\033[0m")
         system(f"rm -rf {dir}/home/{directory}")
     print()
 
-### Voltar uma tela para trás ou sair
-
+### Voltar uma tela para trás ou sair:
 def back():
     print("\n 0) Exit \n ENTER) To go back\n")
     
@@ -277,11 +269,13 @@ def back():
     else:
         view_tools(category)
 
+### Messagem apôs o encerramento do programa
 def warnning():
     system("stty -echoctl")
     print("\n\033[31;1mProgram interrupt\033[0m\n")
 
 
+### Função principal
 def main():
     global total
 
@@ -297,6 +291,7 @@ def main():
 
     else:
         downloading_db()
+
 
 if __name__ == "__main__":
     main()
