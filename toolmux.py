@@ -142,15 +142,15 @@ def view_tools(category):
         try:
             tool_selected = find_index(option, result)
 
-            if tool_selected[6] == "apt":
+            if tool_selected[7] == "apt":
                 apt_install_tool(tool_selected)
 
-            elif tool_selected[6] == "apt not official":
+            elif tool_selected[7] == "apt not official":
                 apt_not_official_install_tool(tool_selected)
-            elif tool_selected[6] == "git":
+            elif tool_selected[7] == "git":
                 git_install_tool(tool_selected)
 
-            elif tool_selected[6] == "curl":
+            elif tool_selected[7] == "curl":
                 curl_install_tool(tool_selected)
         except TypeError as err:
             print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
@@ -172,9 +172,9 @@ def find_index(option, result):
 ### Instalação via APT official:
 def apt_install_tool(tool_selected):
     
-    if tool_selected[8]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[8]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[8]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt update && apt install {tool_selected[9]} -y")
 
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
     system(f"apt install {tool_selected[3]} -y")
@@ -185,15 +185,15 @@ def apt_install_tool(tool_selected):
 def apt_not_official_install_tool(tool_selected):
     
     if tool_selected[8]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[8]} via APT...\033[0m")
-        system(f"apt install {tool_selected[8]} -y")
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt install {tool_selected[9]} -y")
 
     if exists(f"{dir}/usr/etc/apt/sources.list.d") == False:
         mkdir(f"{dir}/usr/etc/apt/sources.list.d")
 
     print(f"\033[33;1mAdding unofficial source {tool_selected[2]}...\033[0m")
-    installer = split_url(tool_selected[5])
-    system(f"curl -L -s {tool_selected[5]} -o {dir}/usr/etc/apt/sources.list.d/{installer}")
+    installer = split_url(tool_selected[6])
+    system(f"curl -L -s {tool_selected[6]} -o {dir}/usr/etc/apt/sources.list.d/{installer}")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via APT not official...\033[0m")
     system(f"apt update && apt install {tool_selected[3]} -y")
@@ -204,25 +204,25 @@ def apt_not_official_install_tool(tool_selected):
 def git_install_tool(tool_selected):
     verify_and_remove(tool_selected[3])
 
-    if tool_selected[8]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[8]} via APT...\033[0m")
-        system(f"apt install {tool_selected[8]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt install {tool_selected[9]} -y")
     
     print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
-    system(f"git clone {tool_selected[5]} {dir}/home/{tool_selected[3]}")
+    system(f"git clone {tool_selected[6]} {dir}/home/{tool_selected[3]}")
     verify_install_home(tool_selected[3], tool_selected[1])
  
 ### Instalação via curl:
 def curl_install_tool(tool_selected):
-    if tool_selected[8]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[8]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[8]} -y")
+    if tool_selected[9]:
+        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
+        system(f"apt update && apt install {tool_selected[9]} -y")
         
     print(f"\033[33;1mInstalling {tool_selected[1]} via CURL...\033[0m")
 
-    installer = split_url(tool_selected[5])
+    installer = split_url(tool_selected[6])
     
-    system(f"curl -LO {tool_selected[5]};bash {installer}")
+    system(f"curl -LO {tool_selected[6]};bash {installer}")
     
     if isfile(f"{installer}") == True:
         remove(f"{installer}")
