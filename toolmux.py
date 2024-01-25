@@ -1,298 +1,294 @@
 #!/usr/bin/env python
-# Instalador de ferramentas
+# Instalador de ferramentas somente no emulador termux
 #
 # By Oliver Silva
 #
 #
 
 from src.banco import *
-from src.menu import *
+from src.menu import banner
 from time import sleep
 from os.path import (isfile, isdir ,exists)
 from os import (system, mkdir, remove, getlogin)
 try:
-    import requests
+    from requests import request
+    from requests.exceptions import ConnectionError
 except ModuleNotFoundError as err:
     exit(err)
 
 tool = Tool()
-__version__ = "0.0.4"
+__version__ = "0.0.7"
 
-cmd = "toolmux"
+cmd = f"\033[1;34mToolmux\033[0m > "
 dir = "/data/data/com.termux/files"
 
-### Checa acesso a internet:
+### Verifica o acesso a internet
 def check_internet():
-    print("Checking internet...")
-    try:
-        requests.request('get', 'https://www.google.com', timeout=5)
-        return True
-    except request.exceptions.ConnectionError:
-        return False
-
-### Baixa a base de ferramentas se não existir:
-def downloading_db():
-    if check_internet() == False:
-        exit("Internet is not connected")
-    print("Internet is connected")
-
-    print()
-    print("\033[33;1mDownloading tool database...\033[0m")
-    system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/App/main/app.db;sleep 1")
-    exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
-
-### Menu se categorias:
-def menu_tools():
-    global category
-
-    banner()
-    print(f"\tVersion: {__version__}\n\n\tTotal of {total} tools \n\tavailable\n")
-    menu_tools_categories()
-
-    category_option = input(f"{cmd}-> ")
-
-    if category_option == "1" or \
-        category_option == "01":
-        category = "Information Collection"
-
-    elif category_option == "2" or \
-        category_option == "02":
-        category = "Vulnerability Analysis"
-
-    elif category_option == "3" or \
-        category_option == "03":
-        category = "Wireless Attacks"
-
-    elif category_option == "4" or \
-        category_option == "04":
-        category = "Web Applications"
-
-    elif category_option == "5" or \
-        category_option == "05":
-        category = "Sniffing and Faking"
-
-    elif category_option == "6" or \
-        category_option == "06":
-        category = "Maintaining Access"
-
-    elif category_option == "7" or \
-        category_option == "07":
-        category = "Reporting Tools"
-
-    elif category_option == "8" or \
-        category_option == "08":
-        category = "Exploitation Tools"
-
-    elif category_option == "9" or \
-        category_option == "09":
-        category = "Forensic Tools"
-
-    elif category_option == "10":
-        category = "Stress Test"
-
-    elif category_option == "11":
-        category = "Password Attacks"
-
-    elif category_option == "12":
-        category = "Reverse Engineering"
-
-    elif category_option == "13":
-        category = "Hardware Hacking"
-        
-    elif category_option == "14":
-        category = "Extra"
-    
-    elif category_option == "0" or \
-        category_option == "00":
-        exit("\nPrograma encerrado\n")
-
-    else:
-        menu_tools()
-    
-    view_tools(category)
-
-
-### Mostra todas as ferramentas de acordo com a categoria:
-def view_tools(category):
-    banner()
-    print()
-    
-    query = f"SELECT * FROM {tool.tb_name} WHERE category = '{category}' ORDER BY name"
-    result = tool.instrunction(query).fetchall()
-
-    print(f"\t{category}\n")
-
-    for index, r in enumerate(result):
-        print(f"\t{index +1}) {r[1]}")
-    
-    print("\n\t0) Exit\n\tENTER) To go back\n")
-    
-    print()
-    tool_option = input(f"{cmd}-> ")
-
-    if tool_option == "0":
-        exit("\nProgram closed\n")
-
-    if tool_option == "":
-        menu_tools()
-
-    options = tool_option.split(",")
-
-    for option in options:
-        try:
-            tool_selected = find_index(option, result)
-
-            if tool_selected[7] == "apt":
-                apt_install_tool(tool_selected)
-
-            elif tool_selected[7] == "apt not official":
-                apt_not_official_install_tool(tool_selected)
-            elif tool_selected[7] == "git":
-                git_install_tool(tool_selected)
-
-            elif tool_selected[7] == "curl":
-                curl_install_tool(tool_selected)
-        except TypeError as err:
-            print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
-
-    back()
-         
-### Retorna o item do indice escolhido:
-def find_index(option, result):
-    indexes = []
-
-    for r in result:
-        indexes.append(result.index(r))
-
-    if (int(option) -1) in indexes:
-        return result[int(option) -1]
-    else:
-        return False
-
-### Instalação via APT official:
-def apt_install_tool(tool_selected):
-    
-    if tool_selected[9]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[9]} -y")
-
-    print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
-    system(f"apt install {tool_selected[3]} -y")
-        
-    verify_install_bin(tool_selected[3], tool_selected[1])
-
-### Instalação via APT not official:
-def apt_not_official_install_tool(tool_selected):
-    
-    if tool_selected[8]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
-        system(f"apt install {tool_selected[9]} -y")
-
-    if exists(f"{dir}/usr/etc/apt/sources.list.d") == False:
-        mkdir(f"{dir}/usr/etc/apt/sources.list.d")
-
-    print(f"\033[33;1mAdding unofficial source {tool_selected[2]}...\033[0m")
-    installer = split_url(tool_selected[6])
-    system(f"curl -L -s {tool_selected[6]} -o {dir}/usr/etc/apt/sources.list.d/{installer}")
-        
-    print(f"\033[33;1mInstalling {tool_selected[1]} via APT not official...\033[0m")
-    system(f"apt update && apt install {tool_selected[3]} -y")
-    remove(f"{dir}/usr/etc/apt/sources.list.d/{installer}")
-    verify_install_bin(tool_selected[4], tool_selected[1])
-
-### Instalação via GIT:
-def git_install_tool(tool_selected):
-    verify_and_remove(tool_selected[3])
-
-    if tool_selected[9]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
-        system(f"apt install {tool_selected[9]} -y")
-    
-    print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
-    system(f"git clone {tool_selected[6]} {dir}/home/{tool_selected[3]}")
-    verify_install_home(tool_selected[3], tool_selected[1])
+  print("Checking internet...")
+  try:
+    request('get', 'https://www.google.com', timeout=5)
+    return True
+  except ConnectionError:
+    return False
  
-### Instalação via curl:
-def curl_install_tool(tool_selected):
-    if tool_selected[9]:
-        print(f"\033[33;1mInstalling dependencies {tool_selected[9]} via APT...\033[0m")
-        system(f"apt update && apt install {tool_selected[9]} -y")
-        
-    print(f"\033[33;1mInstalling {tool_selected[1]} via CURL...\033[0m")
+### Faz download da base de ferramentas
+def downloading_db():
+  if check_internet() == False:
+    exit("Internet is not connected")
+  print("Internet is connected")
+  print()
+  print("\033[33;1mDownloading tool database...\033[0m")
+  system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/App/main/app.db;sleep 1")
+  exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
 
-    installer = split_url(tool_selected[6])
+### Cardápio de opçôes
+def menu_options():
+  banner()
+  print(f"\tv{__version__}\n\033[1;32m\n+ -- -- +=[ Author: Olliv3r | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {total} Tools\033[0m")
+  print("\n\n1) View Categories\n2) Report Bugs\n3) Help\n0) Exit\n")
+
+  try:
+    menu_option = input(f"\n{cmd}")
+  except EOFError:
+    warning()
+  except KeyboardInterrupt:
+    warning()
+
+  if menu_option == "":
+    menu_options()
+
+  elif menu_option == "1" or menu_option == "01":
+    menu_categories()
     
-    system(f"curl -LO {tool_selected[6]};bash {installer}")
+  elif menu_option == "2" or menu_option == "02":
+    report_bugs()
     
-    if isfile(f"{installer}") == True:
-        remove(f"{installer}")
+  elif menu_option == "3" or menu_option == "03":
+    helper()
 
-    verify_install_bin(tool_selected[4], tool_selected[1])
+  elif menu_option == "0" or menu_option == "00":
+    warning()
     
-### Retorna o nome do instalador da url:
-def split_url(url):
-    r_url = url.split("/")
-    return r_url[-1]
+  else:
+    menu_options()
 
-### Verifica instalação via APT, APT not offical e CURL:
-def verify_install_bin(custom_alias, name):
-    print()
+### Cardápio de categorias
+def menu_categories():
+  global category
+  global category_id
+  
+  ids = []
+  result = tool.instrunction('SELECT * FROM categories ORDER BY id').fetchall()
 
-    if isfile(f"{dir}/usr/bin/{custom_alias}") == True:
-        print(f"\033[32;1m{name} installed\033[0m")
-    else:
-        print(f"\033[31;1m{name} not installed\033[0m")
+  print()
+  print("*"*27+" All Categories "+"*"*27)
+  print()
 
-### Verifica instalação via GIT:
-def verify_install_home(directory, name):
-    print()
-    if isdir(f"{dir}/home/{directory}") == True:
-        print(f"\033[32;1m{name} installed\033[0m")
-    else:
-        print(f"\033[31;1m{name} not installed\033[0m")
+  group_category1 = []
+  group_category2 = []
+  
+  for row in result:
+    if row[0] <= len(result) / 2:
+      group_category1.append(f"{row[0]}) {row[1]}")
+
+    if row[0] > len(result) / 2:
+      group_category2.append(f"{row[0]}) {row[1]}")
+    ids.append(row[0])
+
+  max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
+
+  for i in range(max(len(group_category1), len(group_category2))):
+    option1 = group_category1[i] if i < len(group_category1) else ""
+    option2 = group_category2[i] if i < len(group_category2) else ""
+    print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+  print("\nSelect a category or press (enter) to back or (0) to exit.")
+  
+  try:
+    category_option = input(f"\n{cmd}")
+  except EOFError:
+    warning()
+  except KeyboardInterrupt:
+    warning()
+
+  if category_option == "":
+    menu_options()
+  elif int(category_option) in ids:
+    category = result[int(category_option) -1][1]
+    category_id = category_option
+    view_tools(category, category_id)
+  elif category_option == "0" or\
+    category_option == "00":
+    warning()
+  else:
+    sleep(0.2)
+    menu_categories()
+ 
+### Mostra todas as ferramentas de acordo com a categoria
+def view_tools(category, category_id):
+  query = f"SELECT * FROM {tool.tb_name} WHERE category_id = '{category_id}' ORDER BY name"
+  result = tool.instrunction(query).fetchall()
+  
+  print()
+  print("*"*27+" All Tools "+"*"*27)
+  print()
+
+  group_tools1 = []
+  group_tools2 = []
+
+  for index, row in enumerate(result):
+    if row[0] <= len(result) / 2:
+      group_tools1.append(f"{index +1}) {row[1]}")
+          
+    if row[0] > len(result) / 2:
+      group_tools2.append(f"{index +1}) {row[1]}")
+
+  max_length_group1 = len(max(group_tools1, key=len)) if group_tools1 else 0
+  max_length_group2 = len(max(group_tools2, key=len)) if group_tools2 else 0
+      
+  max_length = max(max_length_group1, max_length_group2)
+
+  for i in range(max(len(group_tools1), len(group_tools2))):
+    option1 = group_tools1[i] if i < len(group_tools1) else ""
+    option2 = group_tools2[i] if i < len(group_tools2) else ""
+
+    print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+  print("\nSelect a tool or press (enter) to back or (0) to exit.")
+  print()
+
+  try:
+    tool_option = input(f"{cmd}")
+  except EOFError:
+    warning()
+  except KeyboardInterrupt:
+    warning()
+ 
+  if tool_option == "0":
+    warning()
+  elif tool_option == "":
+    menu_categories()
+
+  options = tool_option.split(",")
+
+  for option in options:
+    try:
+      tool_selected = find_index(option, result)
+      
+      if tool_selected[7] == 1:
+        apt_install_tool(tool_selected)
+      elif tool_selected[7] == 2:
+        git_install_tool(tool_selected)
+    
+    except TypeError as err:
+      print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
+  back()
+         
+### Retorna o item do indice selecionado
+def find_index(option, result):
+  indexes = []
+
+  for r in result:
+    indexes.append(result.index(r))
+
+  if (int(option) -1) in indexes:
+    return result[int(option) -1]
+  else:
+    return False
+
+### Instalação via APT official
+def apt_install_tool(tool_selected):
+  if tool_selected[5]:
+    print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
+    system(f"apt update && apt install {tool_selected[5]} -y")
+
+  print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
+  system(f"apt install {tool_selected[2]} -y")        
+  verify_install_bin(tool_selected[2], tool_selected[1])
+
+### Instalação via GIT
+def git_install_tool(tool_selected):
+  verify_and_remove(tool_selected[3])
+
+  if tool_selected[5]:
+    print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
+    system(f"apt install {tool_selected[5]} -y")
+    
+  print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
+  system(f"git clone https://github.com/{tool_selected[4]} {dir}/home/{tool_selected[3]}")
+
+  installation_tip = tool.instrunction(f'SELECT installation_tip FROM tools WHERE id={tool_selected[0]}').fetchone()
+
+  verify_install_home(tool_selected[3], tool_selected[1], installation_tip)
+
+### Verifica instalação via APT, APT not offical e CURL
+def verify_install_bin(alias, name):
+  print()
+
+  if isfile(f"{dir}/usr/bin/{alias}") == True:
+    print(f"\033[32;1m{name} installed\033[0m")
+  else:
+    print(f"\033[31;1m{name} not installed\033[0m")
+
+### Verifica instalação via GIT
+def verify_install_home(directory, name, tip = None):
+  print()
+  if isdir(f"{dir}/home/{directory}") == True:
+    print(f"\033[32;1m{name} installed\033[0m")
+
+    if tip is not None:
+      print('\n\033[1;33mDica de instalação!\033[0m\n\nPara prosseguir com a instalação copie e cole este comando neste terminal atualmente aberto:\033[0m\n\n')
+      print(f"\033[3;33m{tip[0]}\033[0m\n")
+  else:
+    print(f"\033[31;1m{name} not installed\033[0m")
 
 
-### Verifica a existência do projeto antigo e o remove:
+### Verifica a existência do projeto antigo e o remove
 def verify_and_remove(directory):
-    if isdir(f"{dir}/home/{directory}") == True:
-        print(f"\033[34;1m{directory} found. downloading new {directory}...\033[0m")
-        system(f"rm -rf {dir}/home/{directory}")
-    print()
+  if isdir(f"{dir}/home/{directory}") == True:
+    print(f"\033[34;1m{directory} found. downloading new {directory}...\033[0m")
+    system(f"rm -rf {dir}/home/{directory}")
+  print()
 
-### Voltar uma tela para trás ou sair:
+### Voltar uma tela para trás ou sair
 def back():
-    print("\n 0) Exit \n ENTER) To go back\n")
-    
-    option = input(f"{cmd}-> ")
+  print("\n 0) Exit \n ENTER) To go back\n")
+   
+  try:
+    option = input(f"{cmd}")
+  except EOFError:
+    warning()
+  except KeyboardInterrupt:
+    warning()
 
-    if option == "0":
-        exit("\nProgram closed\n")
-    else:
-        view_tools(category)
+  if option == "0":
+    exit("\nProgram closed\n")
+  else:
+    view_tools(category, category_id)
 
 ### Messagem apôs o encerramento do programa
-def warnning():
-    system("stty -echoctl")
-    print("\n\033[31;1mProgram interrupt\033[0m\n")
+def warning():
+  exit("\n\033[31;1mProgram interrupt\033[0m\n")
 
+def report_bugs():
+  print("Report Bug")
+
+def helper():
+  print("Helper")
 
 ### Função principal
 def main():
-    global total
+  global total
 
-    if isfile('app.db'):
+  if isfile('app.db'):
+    result = tool.get_total_tool()
 
-        result = tool.get_total_tool()
-
-        if result == False:
-            downloading_db()
+    if result == False:
+      downloading_db()
         
-        total = result.fetchall()[0][0]
-        menu_tools()
+    total = result.fetchall()[0][0]
+    menu_options()
 
-    else:
-        downloading_db()
-
+  else:
+    downloading_db()
 
 if __name__ == "__main__":
-    main()
+  main()
