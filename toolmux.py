@@ -38,7 +38,7 @@ def downloading_db():
   print("Internet is connected")
   print()
   print("\033[33;1mDownloading tool database...\033[0m")
-  system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/App/main/app.db;sleep 1")
+  system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/Toolmux-Web/main/toolmux.db;sleep 1")
   exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
 
 ### Cardápio de opçôes
@@ -78,7 +78,7 @@ def menu_categories():
   global category_id
   
   ids = []
-  result = tool.instrunction('SELECT * FROM categories ORDER BY id').fetchall()
+  result = tool.sq('SELECT * FROM category ORDER BY id').fetchall()
 
   print()
   print("*"*27+" All Categories "+"*"*27)
@@ -125,8 +125,7 @@ def menu_categories():
  
 ### Mostra todas as ferramentas de acordo com a categoria
 def view_tools(category, category_id):
-  query = f"SELECT * FROM {tool.tb_name} WHERE category_id = '{category_id}' ORDER BY name"
-  result = tool.instrunction(query).fetchall()
+  result = tool.sq(f"SELECT * FROM {tool.tb_name} WHERE category_tool_id = '{category_id}' ORDER BY name").fetchall()
   
   print()
   print("*"*27+" All Tools "+"*"*27)
@@ -172,10 +171,10 @@ def view_tools(category, category_id):
   for option in options:
     try:
       tool_selected = find_index(option, result)
-      
-      if tool_selected[7] == 1:
+    
+      if tool_selected[8] == 1:
         apt_install_tool(tool_selected)
-      elif tool_selected[7] == 2:
+      elif tool_selected[8] == 2:
         git_install_tool(tool_selected)
     
     except TypeError as err:
@@ -196,9 +195,9 @@ def find_index(option, result):
 
 ### Instalação via APT official
 def apt_install_tool(tool_selected):
-  if tool_selected[5]:
-    print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-    system(f"apt update && apt install {tool_selected[5]} -y")
+  if tool_selected[6]:
+    print(f"\033[33;1mInstalling dependencies {tool_selected[1]} via APT...\033[0m")
+    system(f"apt update && apt install {tool_selected[2]} -y")
 
   print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
   system(f"apt install {tool_selected[2]} -y")        
@@ -206,18 +205,18 @@ def apt_install_tool(tool_selected):
 
 ### Instalação via GIT
 def git_install_tool(tool_selected):
-  verify_and_remove(tool_selected[3])
+  verify_and_remove(tool_selected[4])
 
-  if tool_selected[5]:
-    print(f"\033[33;1mInstalling dependencies {tool_selected[5]} via APT...\033[0m")
-    system(f"apt install {tool_selected[5]} -y")
+  if tool_selected[6]:
+    print(f"\033[33;1mInstalling dependencies {tool_selected[1]} via APT...\033[0m")
+    system(f"apt install {tool_selected[6]} -y")
     
   print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
-  system(f"git clone https://github.com/{tool_selected[4]} {dir}/home/{tool_selected[3]}")
+  system(f"git clone {tool_selected[5]} {dir}/home/{tool_selected[4]}")
 
-  installation_tip = tool.instrunction(f'SELECT installation_tip FROM tools WHERE id={tool_selected[0]}').fetchone()
+  #installation_tip = tool.sq(f'SELECT installation_tip FROM tools WHERE id={tool_selected[0]}').fetchone()
 
-  verify_install_home(tool_selected[3], tool_selected[1], installation_tip)
+  verify_install_home(tool_selected[4], tool_selected[1])
 
 ### Verifica instalação via APT, APT not offical e CURL
 def verify_install_bin(alias, name):
@@ -278,7 +277,7 @@ def helper():
 def main():
   global total
 
-  if isfile('app.db'):
+  if isfile('toolmux.db'):
     result = tool.get_total_tool()
 
     if result == False:

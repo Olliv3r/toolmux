@@ -26,13 +26,13 @@ class Connect:
 
 
 class Tool:
-  tb_name = "tools"
+  tb_name = "tool"
 
   def __init__(self):
     self.tb_name = Tool.tb_name
-    self.db = Connect('app.db')
+    self.db = Connect('toolmux.db')
       
-  def instrunction(self, sql=f'select * from {tb_name} order by name'):
+  def sq(self, sql):
     try:
       result = self.db.cursor.execute(sql)
       return result
@@ -40,4 +40,4 @@ class Tool:
       return False
 
   def get_total_tool(self):
-    return self.instrunction(f'select count(*) from {self.tb_name}')
+    return self.sq(f'select count(*) from {self.tb_name}')
