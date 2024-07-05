@@ -214,9 +214,9 @@ def git_install_tool(tool_selected):
   print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
   system(f"git clone {tool_selected[5]} {dir}/home/{tool_selected[4]}")
 
-  #installation_tip = tool.sq(f'SELECT installation_tip FROM tools WHERE id={tool_selected[0]}').fetchone()
+  installation_tip = tool.sq(f'SELECT installation_tip FROM tool WHERE id={tool_selected[0]}').fetchone()
 
-  verify_install_home(tool_selected[4], tool_selected[1])
+  verify_install_home(tool_selected[4], tool_selected[1], installation_tip)
 
 ### Verifica instalação via APT, APT not offical e CURL
 def verify_install_bin(alias, name):
@@ -234,7 +234,7 @@ def verify_install_home(directory, name, tip = None):
     print(f"\033[32;1m{name} installed\033[0m")
 
     if tip is not None:
-      print('\n\033[1;33mDica de instalação!\033[0m\n\nPara prosseguir com a instalação copie e cole este comando neste terminal atualmente aberto:\033[0m\n\n')
+      print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
       print(f"\033[3;33m{tip[0]}\033[0m\n")
   else:
     print(f"\033[31;1m{name} not installed\033[0m")
