@@ -9,7 +9,7 @@ from src.banco import *
 from src.menu import banner
 from time import sleep
 from os.path import (isfile, isdir ,exists)
-from os import (system, mkdir, remove, getlogin)
+from os import (system, mkdir, remove, getlogin, environ)
 try:
     from requests import request
     from requests.exceptions import ConnectionError
@@ -22,9 +22,16 @@ __version__ = "0.0.7"
 cmd = f"\033[1;34mToolmux\033[0m > "
 dir = "/data/data/com.termux/files"
 
+
+### Verifica se roda no termux
+def check_termux_os():
+    if environ.get("TERMUX_APP__PACKAGE_NAME") is not None:
+        return True
+    else:
+        return False
+
 ### Verifica o acesso a internet
 def check_internet():
-  print("Checking internet...")
   try:
     request('get', 'https://www.google.com', timeout=5)
     return True
@@ -95,7 +102,14 @@ def menu_categories():
       group_category2.append(f"{row[0]}) {row[1]}")
     ids.append(row[0])
 
-  max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
+  if group_category1 and group_category2:
+    max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
+  elif group_category1:
+    max_length = len(max(group_category1, key = len))
+  elif group_category2:
+    max_length = len(max(group_category2, key = len))
+  else:
+    max_length = 0
 
   for i in range(max(len(group_category1), len(group_category2))):
     option1 = group_category1[i] if i < len(group_category1) else ""
@@ -228,12 +242,12 @@ def verify_install_bin(alias, name):
     print(f"\033[31;1m{name} not installed\033[0m")
 
 ### Verifica instalação via GIT
-def verify_install_home(directory, name, tip = None):
+def verify_install_home(directory, name, tip):
   print()
   if isdir(f"{dir}/home/{directory}") == True:
     print(f"\033[32;1m{name} installed\033[0m")
 
-    if tip is not None:
+    if tip[0] != "":
       print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
       print(f"\033[3;33m{tip[0]}\033[0m\n")
   else:
@@ -275,6 +289,11 @@ def helper():
 
 ### Função principal
 def main():
+  if not check_termux_os():
+    exit("Termux OS not detected")
+  print("Termux OS detected")
+  sleep(1)
+
   global total
 
   if isfile('toolmux.db'):
