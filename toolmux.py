@@ -170,6 +170,7 @@ def view_tools(category, category_id):
 
   try:
     tool_option = input(f"{cmd}")
+
   except EOFError:
     warning()
   except KeyboardInterrupt:
