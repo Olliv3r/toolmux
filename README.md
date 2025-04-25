@@ -21,9 +21,11 @@ cd ~/toolmux
 python toolmux.py
 ```
 
-> [!NOTE] Novas ferramentas serão adicionadas em breve.
+> [!NOTE]
+> Novas ferramentas serão adicionadas em breve.
 
-> [!IMPORTANT] Caso você tenha listas de ferramentas e tem interesse de adicioná-las na `toolmux`, mande para [tiooliver](https://t.me/tiooliver_sh) no telegram que iremos cadastrá-las no painel do `toolmux`.
+> [!IMPORTANT]
+> Caso você tenha listas de ferramentas e tem interesse de adicioná-las na `toolmux`, mande para [tiooliver](https://t.me/tiooliver_sh) no telegram que iremos cadastrá-las no painel do `toolmux`.
 
 
 Se junte a comunidade [Toolmux Community](https://toolmuxapp.pythonanywhere.com).
