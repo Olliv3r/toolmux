@@ -1,313 +1,367 @@
-#!/usr/bin/env python
-# Instalador de ferramentas somente no emulador termux
-#
-# By Oliver Silva
-#
+#!/usr/bin/env python3
+# Tool Installer For Termux - By Oliver Silva
 #
 
-from src.banco import *
-from src.menu import banner
-from time import sleep
-from os.path import (isfile, isdir ,exists)
-from os import (system, mkdir, remove, getlogin, environ)
+# Importação de módulosa
+import os
+import sys
+import time
+from os.path import isfile, isdir
+
+from core import TOOL, VERSION, TOTAL_TOOLS, AUTHOR
+from db import DB_PATH
+from banner import load_banner
+
 try:
-    from requests import request
+    import requests
     from requests.exceptions import ConnectionError
 except ModuleNotFoundError as err:
-    exit(err)
+    sys.exit("\033[33;1m[!] O módulo 'requests' é necessário. Instale com: pip install requests \033[0m")
 
-tool = Tool()
-__version__ = "0.0.7"
-
-cmd = f"\033[1;34mToolmux\033[0m > "
-dir = "/data/data/com.termux/files"
-
+PROMPT = f"\033[1;34mToolmux\033[0m > "
+TERMUX_DIR = "/data/data/com.termux/files"
 
 ### Verifica se roda no termux
 def check_termux_os():
-    if environ.get("TERMUX_APP__PACKAGE_NAME") is not None:
-        return True
-    else:
-        return False
+    return os.path.exists(TERMUX_DIR)
 
-### Verifica o acesso a internet
+### Verifica conexão com a internet
 def check_internet():
-  try:
-    request('get', 'https://www.google.com', timeout=5)
-    return True
-  except ConnectionError:
-    return False
+    try:
+        requests.get('https://www.google.com', timeout=5)
+        return True
+    except ConnectionError:
+        return False
  
 ### Faz download da base de ferramentas
 def downloading_db():
-  if check_internet() == False:
-    exit("Internet is not connected")
-  print("Internet is connected")
-  print()
-  print("\033[33;1mDownloading tool database...\033[0m")
-  system("curl -LO -s https://raw.githubusercontent.com/Olliv3r/Toolmux-Web/main/toolmux.db;sleep 1")
-  exit("\033[33;1mDatabase downloaded successfully.\nRun the program again: '\033[32;2m./toolmux.py\033[0m'")
+    if not check_internet():
+        sys.exit("\033[31;1m[×] A Internet não está conectada\033[0m")
+        
+    print("\033[34;1m[*] Baixando banco de dados de ferramentas...\033[0m")
+
+    url_db = 'https://github.com/Olliv3r/Toolmux-DB/raw/refs/heads/main/toolmux.db'
+    response = requests.get(url_db)
+
+    if response.status_code == 200:
+        with open(DB_PATH, 'wb') as f:
+            f.write(response.content)
+
+        sys.exit("\033[32;1m[√] Banco de dados baixado com sucesso.\n\033[33;1m[?] Execute novamente com 'python3 toolmux.py'\033[0m")
+        time.sleep(0.25)
+    
+    else:
+        sys.exit('\033[31;1m[×] Falha ao baixar a base de ferramentas\033[0m')
 
 ### Cardápio de opçôes
 def menu_options():
-  banner()
-  print(f"\tv{__version__}\n\033[1;32m\n+ -- -- +=[ Author: Olliv3r | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {total} Tools\033[0m")
-  print("\n\n1) View Categories\n2) Report Bugs\n3) Help\n0) Exit\n")
+    print(load_banner())
+    print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {TOTAL_TOOLS} Tools\033[0m")
+    print("\n\n1) View Categories\n2) Report Bugs\n3) Help\nq) Exit\n")
 
-  try:
-    menu_option = input(f"\n{cmd}")
-  except EOFError:
-    warning()
-  except KeyboardInterrupt:
-    warning()
+    options_input = {
+        '1': menu_categories,
+        '2': report_bugs,
+        '3': helper,
+        'q': warning
+    }
 
-  if menu_option == "":
-    menu_options()
-
-  elif menu_option == "1" or menu_option == "01":
-    menu_categories()
-    
-  elif menu_option == "2" or menu_option == "02":
-    report_bugs()
-    
-  elif menu_option == "3" or menu_option == "03":
-    helper()
-
-  elif menu_option == "0" or menu_option == "00":
-    warning()
-    
-  else:
-    menu_options()
-
-### Cardápio de categorias
-def menu_categories():
-  global category
-  global category_id
-  
-  ids = []
-  result = tool.sq('SELECT * FROM category ORDER BY id').fetchall()
-
-  print()
-  print("*"*27+" All Categories "+"*"*27)
-  print()
-
-  group_category1 = []
-  group_category2 = []
-  
-  for row in result:
-    if row[0] <= len(result) / 2:
-      group_category1.append(f"{row[0]}) {row[1]}")
-
-    if row[0] > len(result) / 2:
-      group_category2.append(f"{row[0]}) {row[1]}")
-    ids.append(row[0])
-
-  if group_category1 and group_category2:
-    max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
-  elif group_category1:
-    max_length = len(max(group_category1, key = len))
-  elif group_category2:
-    max_length = len(max(group_category2, key = len))
-  else:
-    max_length = 0
-
-  for i in range(max(len(group_category1), len(group_category2))):
-    option1 = group_category1[i] if i < len(group_category1) else ""
-    option2 = group_category2[i] if i < len(group_category2) else ""
-    print(f"{option1.ljust(max_length)}\t\t\t{option2}")
-  print("\nSelect a category or press (enter) to back or (0) to exit.")
-  
-  try:
-    category_option = input(f"\n{cmd}")
-  except EOFError:
-    warning()
-  except KeyboardInterrupt:
-    warning()
-
-  if category_option == "":
-    menu_options()
-  elif int(category_option) in ids:
-    category = result[int(category_option) -1][1]
-    category_id = category_option
-    view_tools(category, category_id)
-  elif category_option == "0" or\
-    category_option == "00":
-    warning()
-  else:
-    sleep(0.2)
-    menu_categories()
- 
-### Mostra todas as ferramentas de acordo com a categoria
-def view_tools(category, category_id):
-  result = tool.sq(f"SELECT * FROM {tool.tb_name} WHERE category_tool_id = '{category_id}' ORDER BY name").fetchall()
-  
-  print()
-  print("*"*27+" All Tools "+"*"*27)
-  print()
-
-  group_tools1 = []
-  group_tools2 = []
-
-  for index, row in enumerate(result):
-    if row[0] <= len(result) / 2:
-      group_tools1.append(f"{index +1}) {row[1]}")
-          
-    if row[0] > len(result) / 2:
-      group_tools2.append(f"{index +1}) {row[1]}")
-
-  max_length_group1 = len(max(group_tools1, key=len)) if group_tools1 else 0
-  max_length_group2 = len(max(group_tools2, key=len)) if group_tools2 else 0
-      
-  max_length = max(max_length_group1, max_length_group2)
-
-  for i in range(max(len(group_tools1), len(group_tools2))):
-    option1 = group_tools1[i] if i < len(group_tools1) else ""
-    option2 = group_tools2[i] if i < len(group_tools2) else ""
-
-    print(f"{option1.ljust(max_length)}\t\t\t{option2}")
-  print("\nSelect a tool or press (enter) to back or (0) to exit.")
-  print()
-
-  try:
-    tool_option = input(f"{cmd}")
-
-  except EOFError:
-    warning()
-  except KeyboardInterrupt:
-    warning()
- 
-  if tool_option == "0":
-    warning()
-  elif tool_option == "":
-    menu_categories()
-
-  options = tool_option.split(",")
-
-  for option in options:
     try:
-      tool_selected = find_index(option, result)
+        choice = input(f"\n{PROMPT}")
+        
+    except(EOFError, KeyboardInterrupt):
+        return warning()
+
+    options_input.get(choice, menu_options)()
     
-      if tool_selected[8] == 1:
-        apt_install_tool(tool_selected)
-      elif tool_selected[8] == 2:
-        git_install_tool(tool_selected)
+# Centraliza texto dinamicamente
+def print_centered(text, filchar=" "):
+    text = f" {text} "
     
-    except TypeError as err:
-      print(f"\n\033[1;33mIndex {option} does not exist in the list of tools above!\033[0m")
-  back()
+    try:
+        terminal_size = os.get_terminal_size().columns
+    except OSError:
+        terminal_size = 80
+
+    print(f"\n{text.center(terminal_size, filchar)}\n")
+        
+
+### Lista de categorias
+def menu_categories():
+    print(load_banner())
+    
+    ids = []
+    result = TOOL.sq('SELECT * FROM category ORDER BY id', ()).fetchall()
+
+    print_centered("Todas as categorias", "*")
+
+    group_category1 = []
+    group_category2 = []
+  
+    for row in result:
+        if row[0] <= len(result) / 2:
+            group_category1.append(f"{row[0]}) {row[1]}")
+
+        if row[0] > len(result) / 2:
+            group_category2.append(f"{row[0]}) {row[1]}")
+        
+        ids.append(row[0])
+
+    if group_category1 and group_category2:
+        max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
+        
+    elif group_category1:
+        max_length = len(max(group_category1, key = len))
+        
+    elif group_category2:
+        max_length = len(max(group_category2, key = len))
+        
+    else:
+        max_length = 0
+
+    for i in range(max(len(group_category1), len(group_category2))):
+        option1 = group_category1[i] if i < len(group_category1) else ""
+        option2 = group_category2[i] if i < len(group_category2) else ""
+
+        print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+        
+    print("\nSelecione uma categoria ou pressione [Enter] para retornar, ou [q] para encerrar.")
+
+    category_count = f"{TOOL.sq('select count(*) from category', ()).fetchone()[0]}"
+
+    try:
+        category_option = input(f"\n{PROMPT}")
+
+        if category_option == "":
+            menu_options()
+             
+        elif category_option == "q":
+            warning()
+
+        elif int(category_option) in ids:
+            view_tools(category_option)
+            
+        else:
+            text_error = f"\n\033[1;31mTente valores entre 1 e {category_count}.\033[0m"
+            menu_back(menu_name="menu_categorias", alert=text_error)
+            
+    except Exception as e:
+        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {category_count}.\033[0m"
+        return menu_back(menu_name="menu_categorias", alert=text_error)
+        
+    except(EOFError, KeyboardInterrupt):
+        return warning()
+        
+### Mostra todas as ferramentas de acordo com a categoria
+def view_tools(category_id):
+    print(load_banner())
+    
+    result = TOOL.sq(f"SELECT * FROM {TOOL.tb_name} WHERE category_tool_id = ? ORDER BY name", (category_id,)).fetchall()
+    
+    print_centered("Todas as Ferramentas", "*")
+
+    group_tools1 = []
+    group_tools2 = []
+
+    for index, row in enumerate(result):
+        if row[0] <= len(result) / 2:
+            group_tools1.append(f"{index +1}) {row[1]}")
+          
+        if row[0] > len(result) / 2:
+            group_tools2.append(f"{index +1}) {row[1]}")
+
+    max_length_group1 = len(max(group_tools1, key=len)) if group_tools1 else 0
+    max_length_group2 = len(max(group_tools2, key=len)) if group_tools2 else 0
+      
+    max_length = max(max_length_group1, max_length_group2)
+
+    for i in range(max(len(group_tools1), len(group_tools2))):
+        option1 = group_tools1[i] if i < len(group_tools1) else ""
+        option2 = group_tools2[i] if i < len(group_tools2) else ""
+
+        print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+
+    print("\nSelecione uma ferramenta ou pressione [Enter] para retornar, ou [q] para encerrar.")
+    print()
+    
+    try:
+        tool_option = input(f"{PROMPT}")
+ 
+        if tool_option == "q":
+            warning()
+            
+        elif tool_option == "":
+            menu_categories()
+            return
+
+        options = tool_option.split(",")
+
+        for option in options:
+            tool_selected = find_index(option, result)
+                        
+            if tool_selected[8] == 1:
+                apt_install_tool(tool_selected, category_id=category_id)
+                
+            elif tool_selected[8] == 2:
+                git_install_tool(tool_selected, category_id=category_id)
+
+        menu_back(menu_name="menu_ferramentas", category_id=category_id)
+            
+    except Exception as e:
+        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {len(result)}.\033[0m"
+        menu_back(menu_name="menu_ferramentas", category_id=category_id, alert=text_error)
+
+    except(EOFError, KeyboardInterrupt):
+        warning()
          
 ### Retorna o item do indice selecionado
-def find_index(option, result):
-  indexes = []
+def find_index(option, result): 
+    try:
+        option = int(option)
 
-  for r in result:
-    indexes.append(result.index(r))
-
-  if (int(option) -1) in indexes:
-    return result[int(option) -1]
-  else:
-    return False
+        if 1 <= option <= len(result):
+            return result[option -1]
+        else:
+            return False
+            
+    except ValueError:
+        return False
 
 ### Instalação via APT official
-def apt_install_tool(tool_selected):
-  if tool_selected[6]:
-    print(f"\033[33;1mInstalling dependencies {tool_selected[1]} via APT...\033[0m")
-    system(f"apt update && apt install {tool_selected[2]} -y")
+def apt_install_tool(tool_selected, category_id):
+    if tool_selected[6]:
+        print(f"\033[33;1mInstalando dependências {tool_selected[1]} com APT...\033[0m")
+        os.system(f"apt update && apt install {tool_selected[2]} -y")
 
-  print(f"\033[33;1mInstalling {tool_selected[1]} via APT...\033[0m")
-  system(f"apt install {tool_selected[2]} -y")        
-  verify_install_bin(tool_selected[2], tool_selected[1])
+    print(f"\033[33;1mInstalando {tool_selected[1]} com APT...\033[0m")
+    os.system(f"apt install {tool_selected[2]} -y")        
+    verify_install_bin(tool_selected[2], tool_selected[1], category_id)
 
 ### Instalação via GIT
-def git_install_tool(tool_selected):
-  verify_and_remove(tool_selected[4])
+def git_install_tool(tool_selected, category_id = None):
+    verify_and_remove(tool_selected[4])
 
-  if tool_selected[6]:
-    print(f"\033[33;1mInstalling dependencies {tool_selected[1]} via APT...\033[0m")
-    system(f"apt install {tool_selected[6]} -y")
+    if tool_selected[6]:
+        print(f"\033[33;1mInstalando dependências {tool_selected[1]} via APT...\033[0m")
+        os.system(f"apt install {tool_selected[6]} -y")
     
-  print(f"\033[33;1mInstalling {tool_selected[1]} via GIT...\033[0m")
-  system(f"git clone {tool_selected[5]} {dir}/home/{tool_selected[4]}")
+    print(f"\033[33;1mInstalando {tool_selected[1]} com GIT...\033[0m")
+    os.system(f"git clone {tool_selected[5]} {TERMUX_DIR}/home/{tool_selected[4]}")
 
-  installation_tip = tool.sq(f'SELECT installation_tip FROM tool WHERE id={tool_selected[0]}').fetchone()
+    installation_tip = TOOL.sq(f'SELECT installation_tip FROM tool WHERE id=?', (tool_selected[0])).fetchone()
 
-  verify_install_home(tool_selected[4], tool_selected[1], installation_tip)
+    verify_install_home(tool_selected[4], tool_selected[1], installation_tip, category_id)
 
 ### Verifica instalação via APT, APT not offical e CURL
-def verify_install_bin(alias, name):
-  print()
+def verify_install_bin(alias, name, category_id):
+    print()
 
-  if isfile(f"{dir}/usr/bin/{alias}") == True:
-    print(f"\033[32;1m{name} installed\033[0m")
-  else:
-    print(f"\033[31;1m{name} not installed\033[0m")
+    if os.path.isfile(f"{TERMUX_DIR}/usr/bin/{alias}") == True:
+        print(f"\033[32;1m{name} instalado\033[0m")
+    else:
+        print(f"\033[31;1m{name} não instalado\033[0m")
 
 ### Verifica instalação via GIT
-def verify_install_home(directory, name, tip):
-  print()
-  if isdir(f"{dir}/home/{directory}") == True:
-    print(f"\033[32;1m{name} installed\033[0m")
+def verify_install_home(directory, name, tip, category_id):
+    print()
 
-    if tip[0] != "":
-      print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
-      print(f"\033[3;33m{tip[0]}\033[0m\n")
-  else:
-    print(f"\033[31;1m{name} not installed\033[0m")
+    if os.path.isdir(f"{TERMUX_DIR}/home/{directory}") == True:
+        print(f"\033[32;1m{name} instalado\033[0m")
+
+        if tip[0] != "":
+            print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
+        print(f"\033[3;33m{tip[0]}\033[0m\n")
+        
+    else:
+        print(f"\033[31;1m{name} não instalado\033[0m")
 
 
 ### Verifica a existência do projeto antigo e o remove
 def verify_and_remove(directory):
-  if isdir(f"{dir}/home/{directory}") == True:
-    print(f"\033[34;1m{directory} found. downloading new {directory}...\033[0m")
-    system(f"rm -rf {dir}/home/{directory}")
-  print()
+    if os.path.isdir(f"{TERMUX_DIR}/home/{directory}") == True:
+        print(f"\033[34;1m{directory} encontrado. baixando novo {directory}...\033[0m")
+        os.system(f"rm -rf {TERMUX_DIR}/home/{directory}")
 
-### Voltar uma tela para trás ou sair
-def back():
-  print("\n 0) Exit \n ENTER) To go back\n")
-   
-  try:
-    option = input(f"{cmd}")
-  except EOFError:
-    warning()
-  except KeyboardInterrupt:
-    warning()
+    print()
 
-  if option == "0":
-    exit("\nProgram closed\n")
-  else:
-    view_tools(category, category_id)
+# NAVEGA ATÉ UM MENU
+def back_to(menu_name=None, category_id=None):
+    
+    menu_actions = {
+        'menu_opcoes': menu_options,
+        'menu_categorias': menu_categories,
+        'menu_ferramentas': lambda: view_tools(category_id),
+        'menu_back': menu_back
+    }
 
-### Messagem apôs o encerramento do programa
+    action = menu_actions.get(menu_name)
+
+    if action:
+        return action()
+
+
+# Menu que auxilia o usuário após a instalação de uma ferramenta
+def menu_back(menu_name=None, category_id=None, alert=None):
+    if alert:
+        print(alert)
+
+    print("\nPressione [Enter] para retornar ou [m] para ir ao menu principal, ou [q] para encerrar.\n")
+    
+    try:
+        option = input(f'{PROMPT}')
+        
+        if option == "":
+            if menu_name == "menu_categorias":
+                return back_to(menu_name="menu_categorias")
+
+            elif menu_name == "menu_ferramentas":
+                return back_to(menu_name="menu_ferramentas", category_id=category_id)
+
+        option_actions = {
+            'm': menu_options,
+            'q': warning
+        }
+
+        action = option_actions.get(option)
+
+        if action:
+            return action()
+            
+        else:
+            print(f'\033[1;31mInvalid input!\033[0m')
+            menu_back(menu_name="menu_ferramentas", category_id=category_id)
+            
+    except Exception as e:
+        print(f'\033[1;31m{e}\033[0m')
+        return back_to(menu_name="menu_back", category_id=category_id)
+
+    except (KeyboardInterrupt, EOFError):
+        return warning()
+
+### Mensagem apôs o encerramento do programa
 def warning():
-  exit("\n\033[31;1mProgram interrupt\033[0m\n")
+    sys.exit("\n\033[1;31mPrograma interrompido\033[0m\n")
 
 def report_bugs():
-  print("Report Bug")
+    print("Report Bug")
 
 def helper():
-  print("Helper")
+    print("Helper")
 
-### Função principal
+### Função Principal
 def main():
-  if not check_termux_os():
-    exit("Termux OS not detected")
-  print("Termux OS detected")
-  sleep(1)
+    if not check_termux_os():
+        sys.exit("\033[31;1m[×] Termux OS não foi detectado\033[0m")
+    
+    print("\033[32;1m[√] Termux OS detectado\033[0m")
+    time.sleep(0.25)
 
-  global total
+    result = TOOL.get_total_tools()
 
-  if isfile('toolmux.db'):
-    result = tool.get_total_tool()
-
-    if result == False:
-      downloading_db()
-        
-    total = result.fetchall()[0][0]
-    menu_options()
-
-  else:
-    downloading_db()
+    if result:
+        menu_options()
+    else:
+        downloading_db()
 
 if __name__ == "__main__":
-  main()
+    main()

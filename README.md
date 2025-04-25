@@ -1,5 +1,5 @@
 # toolmux
-Instalador de ferramentas no termux android.
+Instalador de ferramentas no ambiente termux no android.
 
 #### Categorias:
 ![Captura](https://github.com/Olliv3r/toolmux/blob/main/media/captura.png)
@@ -21,8 +21,13 @@ cd ~/toolmux
 python toolmux.py
 ```
 
-### Obs:
->Novas ferramentas serão adicionadas a todo momento.
+> [!NOTE] Novas ferramentas serão adicionadas em breve.
 
-### Nota:
-Caso você tenha lista de ferramentas e tem interesse de adicioná-las na `toolmux`, mande para [tiooliver](https://t.me/tiooliver_sh) no telegram que iremos cadastrá-las na `toolmux`.
+> [!IMPORTANT] Caso você tenha listas de ferramentas e tem interesse de adicioná-las na `toolmux`, mande para [tiooliver](https://t.me/tiooliver_sh) no telegram que iremos cadastrá-las no painel do `toolmux`.
+
+
+Se junte a comunidade [Toolmux Community](https://toolmuxapp.pythonanywhere.com).
+
+## Licença
+
+Este projeto está licenciado sob os termos da [Licença MIT](LICENSE).
