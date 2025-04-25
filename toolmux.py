@@ -3,6 +3,7 @@
 #
 
 # Importação de módulosa
+import shutil
 import os
 import sys
 import time
@@ -55,7 +56,9 @@ def downloading_db():
 
 ### Cardápio de opçôes
 def menu_options():
+    os.system('clear')
     print(load_banner())
+    
     print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {TOTAL_TOOLS} Tools\033[0m")
     print("\n\n1) View Categories\n2) Report Bugs\n3) Help\nq) Exit\n")
 
@@ -84,46 +87,61 @@ def print_centered(text, filchar=" "):
         terminal_size = 80
 
     print(f"\n{text.center(terminal_size, filchar)}\n")
-        
+
+
+def split_into_columns(data, num_columns):
+    columns = [[] for _ in range(num_columns)]
+    for i, item in enumerate(data):
+        columns[i % num_columns].append(item)
+    return columns
+
+# Divide categorias e ferramentas em até 4 colunas
+def display_group(result=None, terminal_width=None):
+    if not result:
+         print_centered("Nenhuma categoria ou ferramenta encontrada.")
+         return []
+         
+    display_list = [f"{i+1}) {row[1]}" for i, row in enumerate(result)]
+
+    if display_list: 
+        max_length = len(max(display_list, key=len))
+    else:
+        max_length = 0
+    
+    ids = [row[0] for row in result]
+
+    if terminal_width < 60:
+        columns_count = 1
+    elif terminal_width < 90:
+        columns_count = 2
+    elif terminal_width < 130:
+        columns_count = 3
+    else:
+        columns_count = 4
+
+    columns = split_into_columns(display_list, columns_count)
+
+    max_len = max(len(item) for item in display_list)
+    max_rows  = max(len(col) for col in columns)
+
+    for i in range(max_rows):
+        row = [
+            columns[j][i] if i < len(columns[j]) else "" for j in range(columns_count)
+        ]
+        print("\t".join(item.ljust(max_length) for item in row))
+    return ids
 
 ### Lista de categorias
 def menu_categories():
+    os.system('clear')
     print(load_banner())
     
-    ids = []
     result = TOOL.sq('SELECT * FROM category ORDER BY id', ()).fetchall()
 
     print_centered("Todas as categorias", "*")
 
-    group_category1 = []
-    group_category2 = []
-  
-    for row in result:
-        if row[0] <= len(result) / 2:
-            group_category1.append(f"{row[0]}) {row[1]}")
-
-        if row[0] > len(result) / 2:
-            group_category2.append(f"{row[0]}) {row[1]}")
-        
-        ids.append(row[0])
-
-    if group_category1 and group_category2:
-        max_length = max(len(max(group_category1, key = len)), len(max(group_category2, key = len)))
-        
-    elif group_category1:
-        max_length = len(max(group_category1, key = len))
-        
-    elif group_category2:
-        max_length = len(max(group_category2, key = len))
-        
-    else:
-        max_length = 0
-
-    for i in range(max(len(group_category1), len(group_category2))):
-        option1 = group_category1[i] if i < len(group_category1) else ""
-        option2 = group_category2[i] if i < len(group_category2) else ""
-
-        print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+    ids = display_group(result, terminal_width)
         
     print("\nSelecione uma categoria ou pressione [Enter] para retornar, ou [q] para encerrar.")
 
@@ -154,32 +172,14 @@ def menu_categories():
         
 ### Mostra todas as ferramentas de acordo com a categoria
 def view_tools(category_id):
+    os.system('clear')
     print(load_banner())
     
     result = TOOL.sq(f"SELECT * FROM {TOOL.tb_name} WHERE category_tool_id = ? ORDER BY name", (category_id,)).fetchall()
     
     print_centered("Todas as Ferramentas", "*")
-
-    group_tools1 = []
-    group_tools2 = []
-
-    for index, row in enumerate(result):
-        if row[0] <= len(result) / 2:
-            group_tools1.append(f"{index +1}) {row[1]}")
-          
-        if row[0] > len(result) / 2:
-            group_tools2.append(f"{index +1}) {row[1]}")
-
-    max_length_group1 = len(max(group_tools1, key=len)) if group_tools1 else 0
-    max_length_group2 = len(max(group_tools2, key=len)) if group_tools2 else 0
-      
-    max_length = max(max_length_group1, max_length_group2)
-
-    for i in range(max(len(group_tools1), len(group_tools2))):
-        option1 = group_tools1[i] if i < len(group_tools1) else ""
-        option2 = group_tools2[i] if i < len(group_tools2) else ""
-
-        print(f"{option1.ljust(max_length)}\t\t\t{option2}")
+    terminal_width = shutil.get_terminal_size((80, 20)).columns
+    display_group(result, terminal_width)
 
     print("\nSelecione uma ferramenta ou pressione [Enter] para retornar, ou [q] para encerrar.")
     print()
@@ -356,9 +356,7 @@ def main():
     print("\033[32;1m[√] Termux OS detectado\033[0m")
     time.sleep(0.25)
 
-    result = TOOL.get_total_tools()
-
-    if result:
+    if TOTAL_TOOLS > 0:
         menu_options()
     else:
         downloading_db()
