@@ -2,10 +2,10 @@
 Instalador de ferramentas no ambiente termux no android.
 
 #### Categorias:
-![Captura](https://github.com/Olliv3r/toolmux/blob/main/media/captura.png)
+![Captura](https://github.com/Olliv3r/toolmux/blob/main/media/menu_options.jpg)
 
 #### Tools:
-![Captura dois](https://github.com/Olliv3r/toolmux/blob/main/media/captura_dois.png)
+![Captura dois](https://github.com/Olliv3r/toolmux/blob/main/media/menu_category.jpg)
 
 ### Instalação:
 ```

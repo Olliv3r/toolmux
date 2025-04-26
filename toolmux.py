@@ -156,7 +156,8 @@ def menu_categories():
         elif category_option == "q":
             warning()
 
-        elif int(category_option) in ids:
+        elif category_option.isdigit() and 1 <= int(category_option) <= len(ids):
+            category_id = ids[int(category_option) -1]
             view_tools(category_option)
             
         else:
@@ -198,7 +199,7 @@ def view_tools(category_id):
 
         for option in options:
             tool_selected = find_index(option, result)
-                        
+                
             if tool_selected[8] == 1:
                 apt_install_tool(tool_selected, category_id=category_id)
                 
@@ -224,8 +225,9 @@ def find_index(option, result):
         else:
             return False
             
-    except ValueError:
-        return False
+    except (ValueError, TypeError):
+        pass
+    return False
 
 ### Instalação via APT official
 def apt_install_tool(tool_selected, category_id):
@@ -248,7 +250,7 @@ def git_install_tool(tool_selected, category_id = None):
     print(f"\033[33;1mInstalando {tool_selected[1]} com GIT...\033[0m")
     os.system(f"git clone {tool_selected[5]} {TERMUX_DIR}/home/{tool_selected[4]}")
 
-    installation_tip = TOOL.sq(f'SELECT installation_tip FROM tool WHERE id=?', (tool_selected[0])).fetchone()
+    installation_tip = TOOL.sq('SELECT installation_tip FROM tool WHERE id=?', (str(tool_selected[0]))).fetchone()
 
     verify_install_home(tool_selected[4], tool_selected[1], installation_tip, category_id)
 
@@ -270,7 +272,7 @@ def verify_install_home(directory, name, tip, category_id):
 
         if tip[0] != "":
             print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
-        print(f"\033[3;33m{tip[0]}\033[0m\n")
+            print(f"\033[3;33m{tip[0]}\033[0m\n")
         
     else:
         print(f"\033[31;1m{name} não instalado\033[0m")

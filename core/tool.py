@@ -13,7 +13,7 @@ class Tool:
         return result
       
     except sqlite3.Error as error:
-        print(error)
+        print(f"Erro na query: {error}")
         return False
 
   def get_total_tools(self):
