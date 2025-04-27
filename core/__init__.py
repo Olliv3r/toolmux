@@ -1,11 +1,11 @@
 from .tool import Tool
+from .category import Category
 from db import DB_PATH
 
 TOOL = Tool()
+CATEGORY = Category()
 VERSION = "0.0.3"
 AUTHOR = "Olliv3r"
 
-try:
-    TOTAL_TOOLS = TOOL.get_total_tools().fetchone()[0]
-except AttributeError:
-    TOTAL_TOOLS = 0
+TOTAL_TOOLS = TOOL.select().count().execute()
+TOTAL_CATEGORIES = CATEGORY.select().count().execute()

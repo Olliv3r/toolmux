@@ -9,7 +9,7 @@ import sys
 import time
 from os.path import isfile, isdir
 
-from core import TOOL, VERSION, TOTAL_TOOLS, AUTHOR
+from core import TOOL, CATEGORY, VERSION, TOTAL_TOOLS, TOTAL_CATEGORIES, AUTHOR
 from db import DB_PATH
 from banner import load_banner
 
@@ -136,7 +136,7 @@ def menu_categories():
     os.system('clear')
     print(load_banner())
     
-    result = TOOL.sq('SELECT * FROM category ORDER BY id', ()).fetchall()
+    result = CATEGORY.select().order_by("id").execute()
 
     print_centered("Todas as categorias", "*")
 
@@ -144,8 +144,6 @@ def menu_categories():
     ids = display_group(result, terminal_width)
         
     print("\nSelecione uma categoria ou pressione [Enter] para retornar, ou [q] para encerrar.")
-
-    category_count = f"{TOOL.sq('select count(*) from category', ()).fetchone()[0]}"
 
     try:
         category_option = input(f"\n{PROMPT}")
@@ -161,11 +159,11 @@ def menu_categories():
             view_tools(category_option)
             
         else:
-            text_error = f"\n\033[1;31mTente valores entre 1 e {category_count}.\033[0m"
+            text_error = f"\n\033[1;31mTente valores entre 1 e {TOTAL_CATEGORIES}.\033[0m"
             menu_back(menu_name="menu_categorias", alert=text_error)
             
     except Exception as e:
-        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {category_count}.\033[0m"
+        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {TOTAL_CATEGORIES}.\033[0m"
         return menu_back(menu_name="menu_categorias", alert=text_error)
         
     except(EOFError, KeyboardInterrupt):
@@ -175,8 +173,8 @@ def menu_categories():
 def view_tools(category_id):
     os.system('clear')
     print(load_banner())
-    
-    result = TOOL.sq(f"SELECT * FROM {TOOL.tb_name} WHERE category_tool_id = ? ORDER BY name", (category_id,)).fetchall()
+
+    result = TOOL.select().where(f"category_tool_id = {category_id}").execute()
     
     print_centered("Todas as Ferramentas", "*")
     terminal_width = shutil.get_terminal_size((80, 20)).columns
@@ -229,60 +227,86 @@ def find_index(option, result):
         pass
     return False
 
+def print_status(message, color="white"):
+    colors = {
+        "white": "\033[0m",
+        "yellow": "\033[1;33m",
+        "green": "\033[1;32m",
+        "red": "\033[1;31m",
+        "blue": "\033[1;34m"
+    }
+    print(f'{colors.get(color, colors["white"])}{message}{colors["white"]}')
+
 ### Instalação via APT official
 def apt_install_tool(tool_selected, category_id):
-    if tool_selected[6]:
-        print(f"\033[33;1mInstalando dependências {tool_selected[1]} com APT...\033[0m")
-        os.system(f"apt update && apt install {tool_selected[2]} -y")
+    tool_name = tool_selected[1]
+    package_name = tool_selected[2]
+    has_dependencies = tool_selected[6]
 
-    print(f"\033[33;1mInstalando {tool_selected[1]} com APT...\033[0m")
-    os.system(f"apt install {tool_selected[2]} -y")        
-    verify_install_bin(tool_selected[2], tool_selected[1], category_id)
+    if has_dependencies:
+        print_status(f"Instalando dependências para {tool_name}...", "green")
+        os.system(f"apt update && apt install {package_name} -y")
+
+    print_status(f"Instalando {tool_name} com APT...", "green")
+    install_result = os.system(f"apt install {package_name} -y")
+
+    if install_result == 0:
+        print_status(f"\n✅ {tool_name} instalado com sucesso!", "green")
+    else:
+        print_status(f"\n❌ {tool_name} não foi instalado corretamente", "red")
 
 ### Instalação via GIT
 def git_install_tool(tool_selected, category_id = None):
-    verify_and_remove(tool_selected[4])
-
-    if tool_selected[6]:
-        print(f"\033[33;1mInstalando dependências {tool_selected[1]} via APT...\033[0m")
-        os.system(f"apt install {tool_selected[6]} -y")
+    directory_name = tool_selected[4]
+    tool_name = tool_selected[1]
+    has_dependencies = tool_selected[6]
+    package_name = tool_selected[5]
+    tool_id = tool_selected[0]
     
-    print(f"\033[33;1mInstalando {tool_selected[1]} com GIT...\033[0m")
-    os.system(f"git clone {tool_selected[5]} {TERMUX_DIR}/home/{tool_selected[4]}")
+    verify_and_remove(directory_name)
 
-    installation_tip = TOOL.sq('SELECT installation_tip FROM tool WHERE id=?', (str(tool_selected[0]))).fetchone()
+    if has_dependencies:
+        print_status(f"Instalando dependências para {tool_name}...", "green")
+        os.system(f"apt install {has_dependencies} -y")
+        
+    print_status(f"Instalando {tool_name} com GIT...", "green")
+    os.system(f"git clone {package_name} {TERMUX_DIR}/home/{directory_name}")
 
-    verify_install_home(tool_selected[4], tool_selected[1], installation_tip, category_id)
+    ins_tip = TOOL.select().select_columns("installation_tip").filter_by(id=tool_id).execute()
 
-### Verifica instalação via APT, APT not offical e CURL
-def verify_install_bin(alias, name, category_id):
-    print()
+    verify_install_home(directory_name, tool_name, ins_tip, category_id)
 
-    if os.path.isfile(f"{TERMUX_DIR}/usr/bin/{alias}") == True:
-        print(f"\033[32;1m{name} instalado\033[0m")
-    else:
-        print(f"\033[31;1m{name} não instalado\033[0m")
 
 ### Verifica instalação via GIT
 def verify_install_home(directory, name, tip, category_id):
     print()
 
-    if os.path.isdir(f"{TERMUX_DIR}/home/{directory}") == True:
-        print(f"\033[32;1m{name} instalado\033[0m")
+    project_path = f"{TERMUX_DIR}/home/{directory}"
 
-        if tip[0] != "":
-            print('\n\033[1;33mDica de instalação!\033[0m\n\nPara continuar com a instalação copie e cole este comando em uma nova aba:\033[0m\n\n')
-            print(f"\033[3;33m{tip[0]}\033[0m\n")
-        
+    if os.path.isdir(project_path):
+        print_status(f"✅ A instalação do {name} foi concluída com sucesso!\n", "green")
+
+        if tip != "":
+            print_status("Agora, siga a dica abaixo para finalizar a configuração:\n", "blue")
+            print_status("Copie e cole o seguinte comando em uma nova aba do Termux:\n", "blue")
+            print("\033[93m-\033[0m"*len(tip))
+            print_status(tip, "green")
+            print("\033[93m-\033[0m"*len(tip))
+
+            print_status(f"\nDepois de executar o comando acima, seu {name} estará pronto para uso!", "blue")
+        else:
+            print_status(f"Nenhuma dica adicional fornecida para {name}.")
     else:
-        print(f"\033[31;1m{name} não instalado\033[0m")
+        print_status(f"❌ {name} não foi instalado corretamente.", "red")
 
 
 ### Verifica a existência do projeto antigo e o remove
 def verify_and_remove(directory):
-    if os.path.isdir(f"{TERMUX_DIR}/home/{directory}") == True:
-        print(f"\033[34;1m{directory} encontrado. baixando novo {directory}...\033[0m")
-        os.system(f"rm -rf {TERMUX_DIR}/home/{directory}")
+    project_path = f"{TERMUX_DIR}/home/{directory}"
+    
+    if os.path.isdir(project_path):
+        print_status(f"{directory} encontrado. baixando novo {directory}...", "blue")
+        os.system(f"rm -rf {project_path}")
 
     print()
 

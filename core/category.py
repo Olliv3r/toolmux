@@ -1,8 +1,8 @@
 from core.connect import Connect
 from core.query_builder import QueryBuilder
 
-class Tool:
-    def __init__(self, tb_name="tool", connect=None):
+class Category:
+    def __init__(self, tb_name="category", connect=None):
         self.tb_name = tb_name
         self.db = connect or Connect()
 
