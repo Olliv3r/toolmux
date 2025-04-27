@@ -56,10 +56,6 @@ class QueryBuilder:
 
     def execute(self, params=None):
         query = self.build_query()
-
-        print(f'Executando {query}')
-        
-        #cursor = self.connection.cursor()
         self.connection.cursor.execute(query, self.params)
 
         if self._count:

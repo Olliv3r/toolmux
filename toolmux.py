@@ -174,7 +174,7 @@ def view_tools(category_id):
     os.system('clear')
     print(load_banner())
 
-    result = TOOL.select().where(f"category_tool_id = {category_id}").execute()
+    result = TOOL.select().filter_by(category_tool_id=category_id).execute()
     
     print_centered("Todas as Ferramentas", "*")
     terminal_width = shutil.get_terminal_size((80, 20)).columns
