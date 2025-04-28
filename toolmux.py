@@ -9,9 +9,9 @@ import sys
 import time
 from os.path import isfile, isdir
 
-from core import TOOL, CATEGORY, VERSION, TOTAL_TOOLS, TOTAL_CATEGORIES, AUTHOR
+from core import TOOL, CATEGORY, VERSION, TOTAL_TOOLS, TOTAL_CATEGORIES, AUTHOR, BANNER_MENU, BANNER_REPORT
+from core.report_bug import send_report_bug
 from db import DB_PATH
-from banner import load_banner
 
 try:
     import requests
@@ -57,14 +57,14 @@ def downloading_db():
 ### Cardápio de opçôes
 def menu_options():
     os.system('clear')
-    print(load_banner())
+    print(BANNER_MENU)
     
     print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {TOTAL_TOOLS} Tools\033[0m")
     print("\n\n1) View Categories\n2) Report Bugs\n3) Help\nq) Exit\n")
 
     options_input = {
         '1': menu_categories,
-        '2': report_bugs,
+        '2': menu_report,
         '3': helper,
         'q': warning
     }
@@ -134,7 +134,7 @@ def display_group(result=None, terminal_width=None):
 ### Lista de categorias
 def menu_categories():
     os.system('clear')
-    print(load_banner())
+    print(BANNER_MENU)
     
     result = CATEGORY.select().order_by("id").execute()
 
@@ -172,7 +172,7 @@ def menu_categories():
 ### Mostra todas as ferramentas de acordo com a categoria
 def view_tools(category_id):
     os.system('clear')
-    print(load_banner())
+    print(BANNER_MENU)
 
     result = TOOL.select().filter_by(category_tool_id=category_id).execute()
     
@@ -317,6 +317,7 @@ def back_to(menu_name=None, category_id=None):
         'menu_opcoes': menu_options,
         'menu_categorias': menu_categories,
         'menu_ferramentas': lambda: view_tools(category_id),
+        'menu_report': menu_report,
         'menu_back': menu_back
     }
 
@@ -343,6 +344,10 @@ def menu_back(menu_name=None, category_id=None, alert=None):
             elif menu_name == "menu_ferramentas":
                 return back_to(menu_name="menu_ferramentas", category_id=category_id)
 
+            elif menu_name == "menu_report":
+                return back_to(menu_name="menu_report")
+
+
         option_actions = {
             'm': menu_options,
             'q': warning
@@ -368,8 +373,18 @@ def menu_back(menu_name=None, category_id=None, alert=None):
 def warning():
     sys.exit("\n\033[1;31mPrograma interrompido\033[0m\n")
 
-def report_bugs():
-    print("Report Bug")
+def menu_report():
+    os.system('clear')
+    print(BANNER_REPORT)
+    
+    print_centered("Relatório de Bug - Toolmux")
+    desceiption = input("Descreva o problema encontrado:\n >").strip()
+    screenshot = input("Se tiver uma captura de tela. Informe o caminho do arquivo (ou deixe vazio para pular):\n>").strip()
+    user_name = input('Seu nome (ou deixe vazio para pular):\n>').strip()
+
+    send_report_bug(desceiption, user_name, screenshot)
+
+    menu_back(menu_name="menu_report")
 
 def helper():
     print("Helper")

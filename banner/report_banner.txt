@@ -1,0 +1,6 @@
++------------------------------------------------+
+|  ⚠️  REPORT BUGS - TOOLMUX                      |
+|                                                |
+|  Encontrou algum erro? Mande a descrição e     |
+|  se possível uma captura de tela para o time!  |
++------------------------------------------------+
