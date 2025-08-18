@@ -22,7 +22,7 @@ except ModuleNotFoundError as err:
 PROMPT = f"\033[1;34mToolmux\033[0m > "
 TERMUX_DIR = "/data/data/com.termux/files"
 
-### Verifica se roda no termux
+### Verifica se roda no termux  
 def check_termux_os():
     return os.path.exists(TERMUX_DIR)
 
@@ -169,12 +169,20 @@ def menu_categories():
     except(EOFError, KeyboardInterrupt):
         return warning()
         
-### Mostra todas as ferramentas de acordo com a categoria
+### Mostra todas as ferramentas de acordo com as categorias
+
 def view_tools(category_id):
     os.system('clear')
     print(BANNER_MENU)
 
-    result = TOOL.select().filter_by(category_tool_id=category_id).execute()
+    # Busca todas ferramentas de uma categoria:
+    result = TOOL.select().join_many_to_many(
+        association_table="tool_category", 
+        related_col="category_id", 
+        related_id=int(category_id),
+        main_col="id",
+        association_main_col="tool_id"
+    ).execute()
     
     print_centered("Todas as Ferramentas", "*")
     terminal_width = shutil.get_terminal_size((80, 20)).columns
@@ -194,14 +202,14 @@ def view_tools(category_id):
             return
 
         options = tool_option.split(",")
-
+ 
         for option in options:
             tool_selected = find_index(option, result)
-                
-            if tool_selected[8] == 1:
+
+            if tool_selected[12] == 1:
                 apt_install_tool(tool_selected, category_id=category_id)
                 
-            elif tool_selected[8] == 2:
+            elif tool_selected[12] == 2:
                 git_install_tool(tool_selected, category_id=category_id)
 
         menu_back(menu_name="menu_ferramentas", category_id=category_id)
