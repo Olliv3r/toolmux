@@ -8,11 +8,14 @@ import os
 import sys
 import time
 from os.path import isfile, isdir
+from colorama import Fore, Style, init
 
 from core import total_tools, VERSION, AUTHOR, BANNER_MENU, BANNER_REPORT, session
 from core.report_bug import send_report_bug
 from core.models import Category, Tool, tool_category
 import sqlalchemy as sa
+
+init(autoreset=True)
 
 PROMPT = f"\033[1;34mToolmux\033[0m > "
 TERMUX_DIR = "/data/data/com.termux/files"
@@ -26,8 +29,8 @@ def menu_options():
     os.system('clear')
     print(BANNER_MENU)
 
-    print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {total_tools} Tools\033[0m")
-    print("\n\n1) View Categories\n2) Report Bugs\n3) Help\nq) Exit\n")
+    print(f"\t{Fore.GREEN}v{VERSION}\n\n{Fore.WHITE}+ -- -- +=[ Author: {AUTHOR} | Homepage: https://toolmuxapp.pythonanywhere.com\n+ -- -- +=[ {total_tools} Tools{Style.RESET_ALL}")
+    print(f"\n\n{Fore.CYAN}1) {Fore.WHITE}View Categories\n{Fore.CYAN}2) {Fore.WHITE}Report Bugs\n{Fore.CYAN}3) {Fore.WHITE}Help\n{Fore.CYAN}q) {Fore.WHITE}Exit{Style.RESET_ALL}\n")
 
     options_input = {
         '1': menu_categories,
@@ -39,21 +42,18 @@ def menu_options():
     try:
         choice = input(f"\n{PROMPT}")
 
-        if choice not in options_input.keys():
-            print("Opção inválida...aguarde")
-            time.sleep(1)
-            menu_options()
-        
     except(EOFError, KeyboardInterrupt):
         return warning()
 
-    if choice:
-        options_input.get(choice, menu_options)()
-    else:
-        print("Escolha uma opção...aguarde")
+
+    try:
+        action = options_input.get(choice)()
+
+    except TypeError:
+        print_status("\nOpção inválida...aguarde\n", "red")
         time.sleep(1)
         menu_options()
-    
+        
 # Centraliza texto dinamicamente
 def print_centered(text, filchar=" "):
     text = f" {text} "
@@ -75,10 +75,10 @@ def split_into_columns(data, num_columns):
 # Divide categorias e ferramentas em até 4 colunas
 def display_group(result=None, terminal_width=None):
     if not result:
-         print_centered("Nenhuma categoria encontrada.")
+         print_centered("Nenhuma categoria ou ferramenta encontrada.")
          return []
          
-    display_list = [f"{i+1}) {row.name}" for i, row in enumerate(result)]
+    display_list = [f"{Fore.CYAN}{i+1}) {Fore.WHITE}{row.name}" for i, row in enumerate(result)]
 
     if display_list: 
         max_length = len(max(display_list, key=len))
@@ -218,6 +218,8 @@ def print_status(message, color="white"):
         "yellow": "\033[1;33m",
         "green": "\033[1;32m",
         "red": "\033[1;31m",
+        "magenta": "\033[1;35m",
+        "cyan": "\033[1;36m",
         "blue": "\033[1;34m"
     }
     print(f'{colors.get(color, colors["white"])}{message}{colors["white"]}')

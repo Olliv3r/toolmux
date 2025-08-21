@@ -3,7 +3,7 @@ from core.models import Session, Tool
 import os
 import sqlalchemy as sa
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 AUTHOR = "Olliv3r"
 BANNER_MENU = load_banner("menu")
 BANNER_REPORT = load_banner("report", center=True)
