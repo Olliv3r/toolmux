@@ -9,15 +9,10 @@ import sys
 import time
 from os.path import isfile, isdir
 
-from core import TOOL, CATEGORY, VERSION, TOTAL_TOOLS, TOTAL_CATEGORIES, AUTHOR, BANNER_MENU, BANNER_REPORT
+from core import total_tools, VERSION, AUTHOR, BANNER_MENU, BANNER_REPORT, session
 from core.report_bug import send_report_bug
-from db import DB_PATH
-
-try:
-    import requests
-    from requests.exceptions import ConnectionError
-except ModuleNotFoundError as err:
-    sys.exit("\033[33;1m[!] O módulo 'requests' é necessário. Instale com: pip install requests \033[0m")
+from core.models import Category, Tool, tool_category
+import sqlalchemy as sa
 
 PROMPT = f"\033[1;34mToolmux\033[0m > "
 TERMUX_DIR = "/data/data/com.termux/files"
@@ -26,40 +21,12 @@ TERMUX_DIR = "/data/data/com.termux/files"
 def check_termux_os():
     return os.path.exists(TERMUX_DIR)
 
-### Verifica conexão com a internet
-def check_internet():
-    try:
-        requests.get('https://www.google.com', timeout=5)
-        return True
-    except ConnectionError:
-        return False
- 
-### Faz download da base de ferramentas
-def downloading_db():
-    if not check_internet():
-        sys.exit("\033[31;1m[×] A Internet não está conectada\033[0m")
-        
-    print("\033[34;1m[*] Baixando banco de dados de ferramentas...\033[0m")
-
-    url_db = 'https://github.com/Olliv3r/Toolmux-DB/raw/refs/heads/main/toolmux.db'
-    response = requests.get(url_db)
-
-    if response.status_code == 200:
-        with open(DB_PATH, 'wb') as f:
-            f.write(response.content)
-
-        sys.exit("\033[32;1m[√] Banco de dados baixado com sucesso.\n\033[33;1m[?] Execute novamente com 'python3 toolmux.py'\033[0m")
-        time.sleep(0.25)
-    
-    else:
-        sys.exit('\033[31;1m[×] Falha ao baixar a base de ferramentas\033[0m')
-
 ### Cardápio de opçôes
 def menu_options():
     os.system('clear')
     print(BANNER_MENU)
-    
-    print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {TOTAL_TOOLS} Tools\033[0m")
+
+    print(f"\tv{VERSION}\n\033[1;32m\n+ -- -- +=[ Author: {AUTHOR} | Homepage: http://toolmux.rf.gd\n+ -- -- +=[ {total_tools} Tools\033[0m")
     print("\n\n1) View Categories\n2) Report Bugs\n3) Help\nq) Exit\n")
 
     options_input = {
@@ -71,11 +38,21 @@ def menu_options():
 
     try:
         choice = input(f"\n{PROMPT}")
+
+        if choice not in options_input.keys():
+            print("Opção inválida...aguarde")
+            time.sleep(1)
+            menu_options()
         
     except(EOFError, KeyboardInterrupt):
         return warning()
 
-    options_input.get(choice, menu_options)()
+    if choice:
+        options_input.get(choice, menu_options)()
+    else:
+        print("Escolha uma opção...aguarde")
+        time.sleep(1)
+        menu_options()
     
 # Centraliza texto dinamicamente
 def print_centered(text, filchar=" "):
@@ -98,17 +75,17 @@ def split_into_columns(data, num_columns):
 # Divide categorias e ferramentas em até 4 colunas
 def display_group(result=None, terminal_width=None):
     if not result:
-         print_centered("Nenhuma categoria ou ferramenta encontrada.")
+         print_centered("Nenhuma categoria encontrada.")
          return []
          
-    display_list = [f"{i+1}) {row[1]}" for i, row in enumerate(result)]
+    display_list = [f"{i+1}) {row.name}" for i, row in enumerate(result)]
 
     if display_list: 
         max_length = len(max(display_list, key=len))
     else:
         max_length = 0
     
-    ids = [row[0] for row in result]
+    ids = [row.id for row in result]
 
     if terminal_width < 60:
         columns_count = 1
@@ -136,12 +113,13 @@ def menu_categories():
     os.system('clear')
     print(BANNER_MENU)
     
-    result = CATEGORY.select().order_by("id").execute()
+    categories = session.scalars(sa.select(Category).order_by(Category.id)).all()
+    total_categories = session.scalar(sa.select(sa.func.count(Category.id)))
 
     print_centered("Todas as categorias", "*")
 
     terminal_width = shutil.get_terminal_size((80, 20)).columns
-    ids = display_group(result, terminal_width)
+    ids = display_group(categories, terminal_width)
         
     print("\nSelecione uma categoria ou pressione [Enter] para retornar, ou [q] para encerrar.")
 
@@ -159,11 +137,11 @@ def menu_categories():
             view_tools(category_option)
             
         else:
-            text_error = f"\n\033[1;31mTente valores entre 1 e {TOTAL_CATEGORIES}.\033[0m"
-            menu_back(menu_name="menu_categorias", alert=text_error)
+            text_error = f"\n\033[1;31mTente valores entre 1 e {total_categories}.\033[0m"
+            menu_back(menu_name="menu_categorias!l", alert=text_error)
             
     except Exception as e:
-        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {TOTAL_CATEGORIES}.\033[0m"
+        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {total_tools}.\033[0m"
         return menu_back(menu_name="menu_categorias", alert=text_error)
         
     except(EOFError, KeyboardInterrupt):
@@ -175,18 +153,17 @@ def view_tools(category_id):
     os.system('clear')
     print(BANNER_MENU)
 
-    # Busca todas ferramentas de uma categoria:
-    result = TOOL.select().join_many_to_many(
-        association_table="tool_category", 
-        related_col="category_id", 
-        related_id=int(category_id),
-        main_col="id",
-        association_main_col="tool_id"
-    ).execute()
-    
+    tools = session.scalars(
+        sa.select(Tool).join(tool_category, Tool.id == tool_category.c.tool_id).filter(tool_category.c.category_id == category_id)
+    ).all()
+
+    total_tools_filter = session.scalar(
+        sa.select(sa.func.count(Tool.id)).join(tool_category, Tool.id == tool_category.c.tool_id).filter(tool_category.c.category_id == category_id)
+    )
+
     print_centered("Todas as Ferramentas", "*")
     terminal_width = shutil.get_terminal_size((80, 20)).columns
-    display_group(result, terminal_width)
+    display_group(tools, terminal_width)
 
     print("\nSelecione uma ferramenta ou pressione [Enter] para retornar, ou [q] para encerrar.")
     print()
@@ -204,20 +181,20 @@ def view_tools(category_id):
         options = tool_option.split(",")
  
         for option in options:
-            tool_selected = find_index(option, result)
+            tool_selected = find_index(option, tools)
 
-            if tool_selected[12] == 1:
+            if tool_selected.installation_type_id == 1:
                 apt_install_tool(tool_selected, category_id=category_id)
                 
-            elif tool_selected[12] == 2:
+            elif tool_selected.installation_type_id == 2:
                 git_install_tool(tool_selected, category_id=category_id)
 
         menu_back(menu_name="menu_ferramentas", category_id=category_id)
             
     except Exception as e:
-        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {len(result)}.\033[0m"
+        text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {(total_tools_filter)}.\033[0m"
         menu_back(menu_name="menu_ferramentas", category_id=category_id, alert=text_error)
-
+    
     except(EOFError, KeyboardInterrupt):
         warning()
          
@@ -247,9 +224,9 @@ def print_status(message, color="white"):
 
 ### Instalação via APT official
 def apt_install_tool(tool_selected, category_id):
-    tool_name = tool_selected[1]
-    package_name = tool_selected[2]
-    has_dependencies = tool_selected[6]
+    tool_name = tool_selected.name
+    package_name = tool_selected.alias
+    has_dependencies = tool_selected.dependencies
 
     if has_dependencies:
         print_status(f"Instalando dependências para {tool_name}...", "green")
@@ -265,11 +242,12 @@ def apt_install_tool(tool_selected, category_id):
 
 ### Instalação via GIT
 def git_install_tool(tool_selected, category_id = None):
-    directory_name = tool_selected[4]
-    tool_name = tool_selected[1]
-    has_dependencies = tool_selected[6]
-    package_name = tool_selected[5]
-    tool_id = tool_selected[0]
+    directory_name = tool_selected.name_repo
+    tool_name = tool_selected.name
+    has_dependencies = tool_selected.dependencies
+    package_name = tool_selected.alias
+    tool_id = tool_selected.id
+    tool_link = tool_selected.link
     
     verify_and_remove(directory_name)
 
@@ -278,15 +256,17 @@ def git_install_tool(tool_selected, category_id = None):
         os.system(f"apt install {has_dependencies} -y")
         
     print_status(f"Instalando {tool_name} com GIT...", "green")
-    os.system(f"git clone {package_name} {TERMUX_DIR}/home/{directory_name}")
+    os.system(f"git clone {tool_link} {TERMUX_DIR}/home/{directory_name}")
 
-    ins_tip = TOOL.select().select_columns("installation_tip").filter_by(id=tool_id).execute()
+    installation_tip = session.scalar(
+        sa.select(Tool.installation_tip).filter(Tool.id == tool_id)
+    )
 
-    verify_install_home(directory_name, tool_name, ins_tip, category_id)
+    verify_install_home(directory_name, tool_name, installation_tip, category_id)
 
 
 ### Verifica instalação via GIT
-def verify_install_home(directory, name, tip, category_id):
+def verify_install_home(directory, name, installation_tip, category_id):
     print()
 
     project_path = f"{TERMUX_DIR}/home/{directory}"
@@ -294,12 +274,12 @@ def verify_install_home(directory, name, tip, category_id):
     if os.path.isdir(project_path):
         print_status(f"✅ A instalação do {name} foi concluída com sucesso!\n", "green")
 
-        if tip != "":
+        if installation_tip != "":
             print_status("Agora, siga a dica abaixo para finalizar a configuração:\n", "blue")
             print_status("Copie e cole o seguinte comando em uma nova aba do Termux:\n", "blue")
-            print("\033[93m-\033[0m"*len(tip))
-            print_status(tip, "green")
-            print("\033[93m-\033[0m"*len(tip))
+            print("\033[93m-\033[0m"*len(installation_tip))
+            print_status(installation_tip, "green")
+            print("\033[93m-\033[0m"*len(installation_tip))
 
             print_status(f"\nDepois de executar o comando acima, seu {name} estará pronto para uso!", "blue")
         else:
@@ -366,7 +346,7 @@ def menu_back(menu_name=None, category_id=None, alert=None):
         if action:
             return action()
             
-        else:
+        else:   
             print(f'\033[1;31mInvalid input!\033[0m')
             menu_back(menu_name="menu_ferramentas", category_id=category_id)
             
@@ -386,11 +366,11 @@ def menu_report():
     print(BANNER_REPORT)
     
     print_centered("Relatório de Bug - Toolmux")
-    desceiption = input("Descreva o problema encontrado:\n >").strip()
+    description = input("Descreva o problema encontrado:\n >").strip()
     screenshot = input("Se tiver uma captura de tela. Informe o caminho do arquivo (ou deixe vazio para pular):\n>").strip()
     user_name = input('Seu nome (ou deixe vazio para pular):\n>').strip()
 
-    send_report_bug(desceiption, user_name, screenshot)
+    send_report_bug(description, user_name, screenshot)
 
     menu_back(menu_name="menu_report")
 
@@ -403,12 +383,9 @@ def main():
         sys.exit("\033[31;1m[×] Termux OS não foi detectado\033[0m")
     
     print("\033[32;1m[√] Termux OS detectado\033[0m")
-    time.sleep(0.25)
+    time.sleep(0.05)
 
-    if TOTAL_TOOLS > 0:
-        menu_options()
-    else:
-        downloading_db()
+    menu_options()
 
 if __name__ == "__main__":
     main()
