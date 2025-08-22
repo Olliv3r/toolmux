@@ -12,7 +12,7 @@ def load_banner(banner_name, center=False):
         lines = f.readlines()
 
     if center:
-        terminal_width = shutil.get_terminal_size((80, 20)).columns
+        terminal_width = shutil.get_terminal_size().columns
         lines = [line.strip().center(terminal_width) for line in lines]
     else:
         lines = [line.rstrip() for line in lines]        

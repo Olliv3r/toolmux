@@ -2,25 +2,26 @@
 # Tool Installer For Termux - By Oliver Silva
 #
 
-# Importação de módulosa
-import shutil
-import os
-import sys
-import time
-from os.path import isfile, isdir
-from colorama import Fore, Style, init
+# Importação de módulos internos e externos:
+try:
+    import shutil, os, sys, time, requests
+    from colorama import Fore, Style, init
+    import sqlalchemy as sa
 
+except ModuleNotFoundError as err:
+    exit(f"Módulo \033[1;33m{err.name}\033[0m não encontrado no sistema. \nTente instalar o {err.name} dessa forma:\n\nExecute: \033[1;32mpip3 install {err.name}\033[0m")
+
+# Importação de módulos personalizados:
 from core import total_tools, VERSION, AUTHOR, BANNER_MENU, BANNER_REPORT, session
 from core.report_bug import send_report_bug
 from core.models import Category, Tool, tool_category
-import sqlalchemy as sa
 
 init(autoreset=True)
 
 PROMPT = f"\033[1;34mToolmux\033[0m > "
 TERMUX_DIR = "/data/data/com.termux/files"
 
-### Verifica se roda no termux  
+# Verifica se o programa roda no ambiente termux:  
 def check_termux_os():
     return os.path.exists(TERMUX_DIR)
 
@@ -138,11 +139,11 @@ def menu_categories():
             
         else:
             text_error = f"\n\033[1;31mTente valores entre 1 e {total_categories}.\033[0m"
-            menu_back(menu_name="menu_categorias!l", alert=text_error)
+            menu_back(menu_name="menu_categories", alert=text_error)
             
     except Exception as e:
         text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {total_tools}.\033[0m"
-        return menu_back(menu_name="menu_categorias", alert=text_error)
+        return menu_back(menu_name="menu_categories", alert=text_error)
         
     except(EOFError, KeyboardInterrupt):
         return warning()
@@ -189,11 +190,11 @@ def view_tools(category_id):
             elif tool_selected.installation_type_id == 2:
                 git_install_tool(tool_selected, category_id=category_id)
 
-        menu_back(menu_name="menu_ferramentas", category_id=category_id)
+        menu_back(menu_name="menu_tools", category_id=category_id)
             
     except Exception as e:
         text_error = f"\n\033[1;31m{e}! Tente valores entre 1 e {(total_tools_filter)}.\033[0m"
-        menu_back(menu_name="menu_ferramentas", category_id=category_id, alert=text_error)
+        menu_back(menu_name="menu_tools", category_id=category_id, alert=text_error)
     
     except(EOFError, KeyboardInterrupt):
         warning()
@@ -280,7 +281,7 @@ def verify_install_home(directory, name, installation_tip, category_id):
             print_status("Agora, siga a dica abaixo para finalizar a configuração:\n", "blue")
             print_status("Copie e cole o seguinte comando em uma nova aba do Termux:\n", "blue")
             print("\033[93m-\033[0m"*len(installation_tip))
-            print_status(installation_tip, "green")
+            print_status(f": {installation_tip} :", "green")
             print("\033[93m-\033[0m"*len(installation_tip))
 
             print_status(f"\nDepois de executar o comando acima, seu {name} estará pronto para uso!", "blue")
@@ -304,18 +305,17 @@ def verify_and_remove(directory):
 def back_to(menu_name=None, category_id=None):
     
     menu_actions = {
-        'menu_opcoes': menu_options,
-        'menu_categorias': menu_categories,
-        'menu_ferramentas': lambda: view_tools(category_id),
+        'menu_options': menu_options,
+        'menu_categories': menu_categories,
+        'menu_tools': lambda: view_tools(category_id),
         'menu_report': menu_report,
         'menu_back': menu_back
     }
 
-    action = menu_actions.get(menu_name)
-
-    if action:
-        return action()
-
+    try:
+        menu_actions.get(menu_name)()
+    except TypeError as err:
+        print(err)
 
 # Menu que auxilia o usuário após a instalação de uma ferramenta
 def menu_back(menu_name=None, category_id=None, alert=None):
@@ -328,11 +328,11 @@ def menu_back(menu_name=None, category_id=None, alert=None):
         option = input(f'{PROMPT}')
         
         if option == "":
-            if menu_name == "menu_categorias":
-                return back_to(menu_name="menu_categorias")
+            if menu_name == "menu_categories":
+                return back_to(menu_name="menu_categories")
 
-            elif menu_name == "menu_ferramentas":
-                return back_to(menu_name="menu_ferramentas", category_id=category_id)
+            elif menu_name == "menu_tools":
+                return back_to(menu_name="menu_tools", category_id=category_id)
 
             elif menu_name == "menu_report":
                 return back_to(menu_name="menu_report")
@@ -343,14 +343,11 @@ def menu_back(menu_name=None, category_id=None, alert=None):
             'q': warning
         }
 
-        action = option_actions.get(option)
-
-        if action:
-            return action()
-            
-        else:   
+        try:
+            option_actions.get(option)()
+        except TypeError:
             print(f'\033[1;31mInvalid input!\033[0m')
-            menu_back(menu_name="menu_ferramentas", category_id=category_id)
+            menu_back(menu_name="menu_tools", category_id=category_id)
             
     except Exception as e:
         print(f'\033[1;31m{e}\033[0m')
@@ -361,20 +358,24 @@ def menu_back(menu_name=None, category_id=None, alert=None):
 
 ### Mensagem apôs o encerramento do programa
 def warning():
-    sys.exit("\n\033[1;31mPrograma interrompido\033[0m\n")
+    sys.exit("\n\033[1;31mPrograma encerrado...\033[0m\n")
 
 def menu_report():
     os.system('clear')
     print(BANNER_REPORT)
-    
-    print_centered("Relatório de Bug - Toolmux")
-    description = input("Descreva o problema encontrado:\n >").strip()
-    screenshot = input("Se tiver uma captura de tela. Informe o caminho do arquivo (ou deixe vazio para pular):\n>").strip()
-    user_name = input('Seu nome (ou deixe vazio para pular):\n>').strip()
 
-    send_report_bug(description, user_name, screenshot)
+    try:
+        print_centered("Relatório de Bug - Toolmux")
+        description = input("Descreva o problema encontrado:\n >").strip()
+        screenshot = input("Se tiver uma captura de tela. Informe o caminho do arquivo (ou deixe vazio para pular):\n>").strip()
+        user_name = input('Seu nome (ou deixe vazio para pular):\n>').strip()
 
-    menu_back(menu_name="menu_report")
+        send_report_bug(description, user_name, screenshot)
+
+        menu_back(menu_name="menu_report")
+    except (KeyboardInterrupt, EOFError):
+        warning()
+
 
 def helper():
     print("Helper")
